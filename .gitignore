@@ -1,1 +1,14 @@
-/BBDD
+
+1.Descargar/actualizar_bbdd.txt
+3.Calcular_indicadores/IPEE/antiguo
+BBDD/coeficientes/**/*.csv
+BBDD/indicadores/**/*.csv
+BBDD/q/DGA/bruto/antiguos/**/*.csv
+BBDD/niveles_pozos/procesado/**/*.csv
+BBDD/pp/DGA/bruto/antiguos/**/*.csv
+BBDD/temp/DGA/mean/antiguos/**/*.csv
+BBDD/temp/DGA/min/antiguos/**/*.csv
+BBDD/temp/DGA/max/antiguos/**/*.csv
+BBDD/q/DGA/procesado/**/*.csv
+otros
+

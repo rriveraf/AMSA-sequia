@@ -1,156 +1,114 @@
 #Extraer datos de la Direccion Meteorologica de Chile
-descargar_temp_DGA<-function(fecha_ini, fecha_fin, estaciones){
-library(rvest)
-library(writexl)
-library(readxl)
-library(dplyr)
-library(stringr)
-library(lubridate)
-library(tidyr)
-library(purrr)
-library(beepr)
-library(rjson)
-require(RCurl)
-require(XML)
-library(rvest)
-require(rjson)
-library(RJSONIO)
-library(ggplot2)
+#Es necesario correr archivo de Librerias.R para poder correr esta función
+descargar_temp_DGA<-function(ano_inicio, ano_actual, mes_ultimo, estaciones){
 
-##################### Definimos funciones de utilidad #####################
+  ##################### Definimos funciones de utilidad #####################
 
-#####1) Función para concatenar URL's #####
+  #####1) Función para concatenar URL's #####
 
-getUrls2 <- function(year,cod_est){
-  #Definir URL raíz del servidor (debe ser estática)
-  root1<-"https://snia.mop.gob.cl/dgasat/pages/dgasat_param/dgasat_param_tablas.jsp?estacion1="
-  #cod_est<-"07321005-4"
-  root2<-"&estacion2=-1&estacion3=-1&parametros="
-  root3<-"_5_Temp.del+Aire+%28%C2%BAC%29&accion=refresca&param=&tipo=ANO&fechaFinGrafico=18%2F05%2F2023&hora_fin=0&tiporep=S&period=rango&fechaInicioTabla=01%2F01%2F"
-  #year<-"2018"
-  root4<-"&fechaFinTabla=31%2F12%2F"
-  root5<-"&UserID=nobody&EsDL1=&EsDL2=&EsDL3="
-  #url<-paste0(root1,cod_est,root2,cod_est,root3,year,root4,year,root5)
-  
-  #Se genera el url completo
-  urls <- NULL
-  urls <- c(urls,paste0(root1,cod_est,root2,cod_est,root3,year,root4,year,root5))
-  return(urls)
-}
+  getUrls2 <- function(year,cod_est){
+    #Definir URL raíz del servidor (debe ser estática)
+    root1<-"https://snia.mop.gob.cl/dgasat/pages/dgasat_param/dgasat_param_tablas.jsp?estacion1="
+    #cod_est<-"07321005-4"
+    root2<-"&estacion2=-1&estacion3=-1&parametros="
+    root3<-"_5_Temp.del+Aire+%28%C2%BAC%29&accion=refresca&param=&tipo=ANO&fechaFinGrafico=18%2F05%2F2023&hora_fin=0&tiporep=S&period=rango&fechaInicioTabla=01%2F01%2F"
+    #year<-"2018"
+    root4<-"&fechaFinTabla=31%2F12%2F"
+    root5<-"&UserID=nobody&EsDL1=&EsDL2=&EsDL3="
+    #url<-paste0(root1,cod_est,root2,cod_est,root3,year,root4,year,root5)
 
-
-
-
-####2) Función para descargar data desde Link ########
-
-getData<-function(url){
-  #INTENTAR descargar HTML, con recepción de error si no conecta.
-  
-  tryCatch({
-    html <- read_html(url)
-    # Additional code you want to execute if successful
-    #Extraer datos del html
-    tabla<-html %>%
-      html_elements("#datos") %>%
-      html_table() %>%
-      data.frame() 
-    colnames(tabla)<-c("id", "fecha", "temp_min","temp_max","temp_mean")
-   
-    #Resumir los datos mensualmente:
-    tabla$fecha <- as.Date(tabla$fecha, format = "%d/%m/%Y")
-    tabla$Month <- month(tabla$fecha)
-    tabla$Year <- year(tabla$fecha)
-    tabla$Day <- day(tabla$fecha)
-    tabla <- tabla %>%
-      #group_by(Year, Month) %>%
-      #summarize(temp_month =  mean(temp_mean)) %>%
-      mutate(Codigo_nacional= substring(url, 85, 94)) %>% 
-    select(Day, Month,Year, Codigo_nacional, temp_min, temp_max, temp_mean)
-      
-    
-    #Rellenamos las consultas vacías o con error con NA:
-    
-    if (nrow(tabla) > 0) {
-      return(tabla)
-    } else { return(data.frame(Year=as.numeric(substring(url, 327, 330)),
-                               Day=NA,
-                               Month=NA,
-                               temp_mean=NA,
-                               temp_max=NA,
-                               temp_min=NA,
-                               Codigo_nacional=substring(url, 85, 94))) }
-    
-  }, error = function(e) {
-    # En caso de que la conexión tire ERROR:
-    return(data.frame(Year=as.numeric(substring(url, 327, 330)),
-                      Day=NA,
-                      Month=NA,
-                      temp_mean=NA,
-                      temp_max=NA,
-                      temp_min=NA,
-                      Codigo_nacional=substring(url, 85, 94)))
-    message("An error occurred: ", conditionMessage(e))
-  })
-  
-}  
-
-
-
-######################## Comienza rutina ################################
-
-#Ingresar data de las estaciones
-#direccion_catastro_estaciones <- paste0(getwd(),"/BBDD/estaciones/estaciones_BBDD_original.xlsx")
-#estaciones <- read_excel(direccion_catastro_estaciones, sheet = "Sheet1")
-
-#Definir fecha de inicio y fecha de fin para extraer datos
-urls<-NULL
-#fecha_ini<-"1990"
-#fecha_fin<-"2023"
-for(year in fecha_ini:fecha_fin){
-  for(i in 1:length(estaciones$Codigo_nacional)){
-    urls<-c(urls,getUrls2(year, estaciones$Codigo_nacional[[i]]))
+    #Se genera el url completo
+    urls <- NULL
+    urls <- c(urls,paste0(root1,cod_est,root2,cod_est,root3,year,root4,year,root5))
+    return(urls)
   }
-}
 
-#Main loop
-temp<-NULL
-for (i in 1:length(urls)){
+
+
+
+  ####2) Función para descargar data desde Link ########
+
+  getData<-function(url){
+    #INTENTAR descargar HTML, con recepción de error si no conecta.
+
+    tryCatch({
+      html <- read_html(GET(url, add_headers("User-Agent" = "Mozilla/5.0")))
+      # Additional code you want to execute if successful
+      #Extraer datos del html
+      tabla<-html %>%
+        html_elements("#datos") %>%
+        html_table() %>%
+        data.frame() 
+      colnames(tabla)<-c("id", "fecha", "temp_min","temp_max","temp_mean")
+
+      #Resumir los datos mensualmente:
+      tabla$fecha <- as.Date(tabla$fecha, format = "%d/%m/%Y")
+      tabla$Month <- month(tabla$fecha)
+      tabla$Year <- year(tabla$fecha)
+      tabla$Day <- day(tabla$fecha)
+      tabla <- tabla %>%
+        #group_by(Year, Month) %>%
+        #summarize(temp_month =  mean(temp_mean)) %>%
+        mutate(Codigo_nacional= substring(url, 85, 94)) %>% 
+      select(Day, Month,Year, Codigo_nacional, temp_min, temp_max, temp_mean)
+
+
+      #Rellenamos las consultas vacías o con error con NA:
+
+      if (nrow(tabla) > 0) {
+        return(tabla)
+      } else { return(data.frame(Year=as.numeric(substring(url, 327, 330)),
+                                 Day=NA,
+                                 Month=NA,
+                                 temp_mean=NA,
+                                 temp_max=NA,
+                                 temp_min=NA,
+                                 Codigo_nacional=substring(url, 85, 94))) }
+
+    }, error = function(e) {
+      # En caso de que la conexión tire ERROR:
+      return(data.frame(Year=as.numeric(substring(url, 327, 330)),
+                        Day=NA,
+                        Month=NA,
+                        temp_mean=NA,
+                        temp_max=NA,
+                        temp_min=NA,
+                        Codigo_nacional=substring(url, 85, 94)))
+      message("An error occurred: ", conditionMessage(e))
+    })
+
+  }  
+
   
-  temp<-rbind(temp, getData(urls[i]))
-  print(paste0("Voy en el enlace web número: ",i, "de ",length(urls)))
-  
-}
-result <- temp %>%
-  filter(
-    temp_max >= -50 & temp_max <= 50,
-    temp_min >= -50 & temp_min <= 50,
-    temp_mean >= -50 & temp_mean <= 50
-  )
+  #Definir fecha de inicio y fecha de fin para extraer datos
+  urls<-NULL
+  #ano_ini<-"1990"
+  #ano_fin<-"2023"
+  for(year in ano_inicio:ano_actual){
+    for(i in 1:length(estaciones$Codigo_nacional)){
+      urls<-c(urls,getUrls2(year, estaciones$Codigo_nacional[[i]]))
+    }
+  }
 
-#write.csv(temp,"temp_DGA_1990_2023_07.csv")
+  #Main loop
+  temp<-NULL
+  for (i in 1:length(urls)){
 
-#Filtrar valores NA, negativos outliers >-50 y <50.
-#temp[temp > 50 | temp < -50] <- NA
-#sum(is.na(temp))
+    temp<-rbind(temp, getData(urls[i]))
+    print(paste0("Voy en el enlace web número: ",i, "de ",length(urls)))
 
+  }
+  result <- temp %>%
+    filter(
+      temp_max >= -50 & temp_max <= 50,
+      temp_min >= -50 & temp_min <= 50,
+      temp_mean >= -50 & temp_mean <= 50
+    )
 
-#OUTPUT TO EXCEL
-#write_xlsx(
-#  result,
-#  path =paste0("temp_", fecha_ini ,"_", fecha_fin,".xlsx"),
-#  col_names = TRUE,
-#  format_headers = TRUE
-#)
+  result <- result %>% 
+    filter(!(Year == ano_actual & Month > as.numeric(mes_ultimo) ))
 
-
-# Plot the line graph
-#ggplot(aggregate(temp_mean ~ Month, data = result, FUN = mean)
-#       , aes(x = Month, y = temp_mean)) +
-#  geom_line() +
-#  labs(x = "Month", y = "Mean Temperature") +
-#  ggtitle("Mean Temperature by Month")
-
-return(result)
-beepr::beep(8)
+  return(result)
+  beepr::beep(8)
 
 }

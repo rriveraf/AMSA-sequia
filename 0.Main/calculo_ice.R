@@ -20,7 +20,6 @@ source(paste0(directorio, "/1.Descargar/actualizar_bbdd.R"))
 source(paste0(directorio, "/2.Promediar_formatear/promedio_mensual.R"))
 source(paste0(getwd(), "/4.Calcular_indicadores/ICE/Codigo_base.R"))
 source(paste0(directorio, "/5.Concatenar_final/concatenar.R"))
-source("C:/Users/56984/Documents/CCGUC/WebScraping/4.Calcular_indicadores/ICE/Codigo_base.R")
 
 #1) Actualizar bases de datos climatologicas
 #fuentes_disponibles<-c("dmc", "dga")

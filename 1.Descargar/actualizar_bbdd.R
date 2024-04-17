@@ -1,31 +1,21 @@
+actualizar_datos(getwd(), "niveles_pozos", "DGA")
 
-actualizar_datos<-function(directorio, variable, fuente){
-  
+actualizar_datos(getwd(), "pp", "DGA")
+
+actualizar_datos(getwd(), "caudal", "DGA")
+
+actualizar_datos<-function(directorio_base, variable, fuente){
 ################ MANEJO DE ERRORES #############################
-  
-# Check if required libraries are installed and load them if not
-  required_packages <- c("tidyverse", "readxl", "writexl", "lmomco", "SPEI")
-  for (package in required_packages) {
-    if (!requireNamespace(package, quietly = TRUE)) {
-      stop(paste("The required package '", package, "' is not installed. Please install it before using this function.", sep = ""))
-    }
+
+  source(paste0(directorio_base, "/1.Descargar/Librerias.R"))
+# Check directorio_base is a string
+  if (!is.character(directorio_base)) {
+    stop("Argumento 'directorio_base' debe ser string.")
   }
-  
-library(tidyverse)
-library(readxl)
-library(writexl)
-library(lmomco)
-library(SPEI)
-    
-# Check directorio is a string
-  if (!is.character(directorio)) {
-    stop("Argumento 'directorio' debe ser string.")
-  }
-  
 # Check variable is valid
-  valid_variable <- c("pp", "temp", "caudal")
+  valid_variable <- c("pp", "temp", "caudal", "temp_max", "temp_min", "niveles_pozos")
   if (!(variable %in% valid_variable)) {
-    stop("Argumento 'variable' debe ser 'pp', 'temp', o 'caudal'.")
+    stop("Argumento 'variable' debe ser 'pp', 'temp', 'caudal', 'temp_max', 'temp_min' o 'niveles_pozos'")
   }
   
 # Check fuente is valid (case-insensitive)
@@ -34,297 +24,91 @@ library(SPEI)
     stop("Argumento 'fuente' debe ser 'DGA' or 'DMC'")
   }
   if(variable=="caudal" & tolower(fuente)=="dmc"){stop("Error: Para 'caudal' usar solo 'DGA'")}
-  if(variable=="temp" & tolower(fuente)=="dmc"){stop("Error: Para 'DMC' usar solo 'temp_max' y 'temp_min'")}
+  if(variable=="temp" & tolower(fuente)=="dmc"){stop("Er: Parorra 'DMC' usar solo 'temp_max' y 'temp_min'")}
   if(variable=="temp_max" & tolower(fuente)=="dga"){stop("Error: Para 'DGA' usar solo 'temp'")}
   if(variable=="temp_min" & tolower(fuente)=="dga"){stop("Error: Para 'DGA' usar solo 'temp'")}
-
-  
-######################Cargamos los parametros de entrada########################
-
-#Definimos fechas actuales (ultimo mes es el anterior al actual para asegurar datos mensuales completos)
-ultimo_mes<-as.numeric(substr(Sys.time() %m-% months(1),6,7))
-penultimo_mes<-ultimo_mes-1
-ultimo_ano<-as.numeric(substr(Sys.time() %m-% months(1),1,4))
-
-#Cargamos las funciones para descargar datos  
-nombres_funciones<-c("Descargar_pp_DGA.R","Descargar_caudal_DGA.R","Descargar_temp_DGA.R",
-                     "Descargar_pp_DMC.R","Descargar_temp_max_DMC.R","Descargar_temp_min_DMC.R")
-for(i in nombres_funciones){source(paste0(directorio,"/1.Descargar/",i))}
-
-#Definir estaciones a descargar
-metadatos_DGA<-read_excel(paste0(directorio,"/BBDD/metadatos/DGA/estaciones_DGA.xlsx"))
-metadatos_DMC<-read_excel(paste0(directorio,"/BBDD/metadatos/DMC/estaciones_DMC.xlsx"))
-
-#Definir fechas a descargar. Cambiar estos parametros para descargar bbdd histórica
-fecha_ini<-ultimo_ano
-fecha_fin<-ultimo_ano
+  if(variable=="niveles_pozos" & tolower(fuente)=="dmc"){stop("Error: Para 'niveles_pozos' usar solo 'DGA'")}
 
 
-#############Procedemos a actualizar los datos solicitados######################
+  #Definimos fechas actuales (ultimo mes es el anterior al actual para asegurar datos mensuales completos)
+  mes_ultimo<-as.numeric(substr(Sys.time() %m-% months(1),6,7))
+  ano_actual<-as.numeric(substr(Sys.time() %m-% months(1),1,4))
 
-#PP DGA
-if(variable=="pp" & tolower(fuente)=="dga"){
-  #descargar
-  pp_DGA_nueva<-descargar_pp_DGA(fecha_ini, fecha_fin, estaciones = metadatos_DGA)
-  print("Se descargaron exitosamente todos los datos de precipitacion desde la DGA")
-  
-  #guardar bbdd nueva
-  write.csv(pp_DGA_nueva, paste0(directorio,
-                                 "/BBDD/pp/DGA/bruto/pp_DGA_",
-                                 fecha_ini,
-                                 "_",
-                                 fecha_fin,
-                                 "_",
-                                 ultimo_mes,
-                                 ".csv"), row.names = FALSE)
-  print("Se escribió la base de datos nueva")
-  
-  #cargar bbdd antigua
-  pp_DGA_antigua<-read.csv(paste0(directorio,
-                                  "/BBDD/pp/DGA/bruto/pp_DGA_",
-                                  "2022",
-                                  "_",
-                                  fecha_fin,
-                                  "_",
-                                  penultimo_mes,
-                                  ".csv")) 
-  pp_DGA_antigua<- pp_DGA_antigua %>%
-    filter(Year<ultimo_ano)
-  print("Se realizó la lectura de la base de datos antigua")
-  
-  pp_DGA_actualizada<-rbind(pp_DGA_antigua, pp_DGA_nueva)
-  print("Se concatenaron las bases de datos")
-  
-  write.csv(pp_DGA_actualizada, paste0(directorio,
-                                       "/BBDD/pp/DGA/bruto/pp_DGA_",
-                                       "2022",
-                                       "_",
-                                       fecha_fin,
-                                       "_",
-                                       ultimo_mes,
-                                       ".csv"), row.names = FALSE)
-  print("Actualización exitosa")
-}
+  source(paste0(directorio_base, "/1.Descargar/Manejo_BDD.R"))
 
+  #Definir estaciones a descargar
+  #metadatos_DGA<-read_excel(paste0(directorio_base,"/BBDD/metadatos/DGA/estaciones_DGA.xlsx"))
+  metadatos_DMC<-read_excel(paste0(directorio_base,"/BBDD/metadatos/DMC/estaciones_DMC.xlsx"))
 
+  csv_metadata_pozos_path = paste0(directorio_base, "/BBDD/metadatos/DGA/pozos/estaciones_DGA_pozos.csv")
+  csv_metadata_caudal_path = paste0(directorio_base, "/BBDD/metadatos/DGA/caudal/estaciones_DGA_caudal.csv")
+  csv_metadata_pp_y_temp_path = paste0(directorio_base, "/BBDD/metadatos/DGA/pp_y_temp/estaciones_DGA_pp_y_temp.csv")
 
-#PP DMC
-if(variable=="pp" & tolower(fuente)=="dmc"){
-  pp_DMC_nueva<-descargar_pp_DMC(fecha_ini, fecha_fin, estaciones = metadatos_DMC)
-  print("Se descargaron exitosamente todos los datos de precipitación desde la DMC")
-  write.csv(pp_DMC_nueva, paste0(directorio,
-                                 "/BBDD/pp/DMC/bruto/pp_DMC_",
-                                 fecha_ini,
-                                 "_",
-                                 fecha_fin,
-                                 "_",
-                                 ultimo_mes,
-                                 ".csv"), row.names = FALSE)
-  print("Se escribió la base de datos nueva")
-  
-  pp_DMC_antigua<-read.csv(paste0(directorio,
-                                  "/BBDD/pp/DMC/bruto/pp_DMC_",
-                                  "2020",
-                                  "_",
-                                  fecha_fin,
-                                  "_",
-                                  penultimo_mes,
-                                  ".csv")) 
-  pp_DMC_antigua<- pp_DMC_antigua %>%
-    filter(Year<ultimo_ano)
-  
-  print("Se realizó la lectura de la base de datos antigua")
-  pp_DMC_actualizada<-rbind(pp_DMC_antigua, pp_DMC_nueva)
-  print("Se concatenaron las bases de datos")
-  write.csv(pp_DMC_actualizada, paste0(directorio,
-                                 "/BBDD/pp/DMC/bruto/pp_DMC_",
-                                 "2020",
-                                 "_",
-                                 fecha_fin,
-                                 "_",
-                                 ultimo_mes,
-                                 ".csv"), row.names = FALSE)
-  print("Actualización exitosa")
-}
+  #Definir columnas de los archivos de metadatos, con su tipo de dato específico
+  tipos <- cols(
+  Codigo_nacional = col_character(),
+  Nombre = col_character(),
+  LAT = col_double(),
+  LONG = col_double(),
+  Altura = col_integer(),
+  TIPO = col_character(),
+  COD_CUEN = col_integer(),
+  COD_SUBC = col_integer(),
+  COD_SSUBC = col_integer(),
+  NOM_CUEN = col_character(),
+  NOM_SUBC = col_character(),
+  NOM_SSUBC = col_character(),
+  COD_REG = col_integer(),
+  COD_PROV = col_integer(),
+  COD_COM = col_integer(),
+  NOM_REG = col_character(),
+  NOM_PROV = col_character(),
+  NOM_COM = col_character()
+)
+  metadata_DGA_pozos <- read_csv(csv_metadata_pozos_path, col_types = tipos)
+  metadata_DGA_caudal <- read_csv(csv_metadata_caudal_path, col_types = tipos)
+  metadata_DGA_pp_y_temp <- read_csv(csv_metadata_pp_y_temp_path, col_types = tipos)
 
-#TEMP DGA
-if(variable=="temp" & tolower(fuente)=="dga"){
-  temp_DGA_nueva<-descargar_temp_DGA(fecha_ini, fecha_fin, estaciones = metadatos_DGA)
   
-  temp_DGA_nueva_mean<- temp_DGA_nueva %>%
-                      select(Year, Month, Day, Codigo_nacional, temp_mean)
-  
-  temp_DGA_nueva_max<- temp_DGA_nueva %>%
-                      select(Year, Month, Day, Codigo_nacional, temp_max)
-  
-  temp_DGA_nueva_min<- temp_DGA_nueva %>%
-                      select(Year, Month, Day, Codigo_nacional, temp_min)
-  
-  #guardar bbdd nueva
-  write.csv(temp_DGA_nueva_mean, paste0(directorio,
-                                 "/BBDD/temp/DGA/mean/temp_DGA_mean_",
-                                 fecha_ini,
-                                 "_",
-                                 fecha_fin,
-                                 "_",
-                                 ultimo_mes,
-                                 ".csv"), row.names = FALSE)
-  
-  write.csv(temp_DGA_nueva_max, paste0(directorio,
-                                   "/BBDD/temp/DGA/max/temp_DGA_max_",
-                                   fecha_ini,
-                                   "_",
-                                   fecha_fin,
-                                   "_",
-                                   ultimo_mes,
-                                   ".csv"), row.names = FALSE)
-  write.csv(temp_DGA_nueva_min, paste0(directorio,
-                                   "/BBDD/temp/DGA/min/temp_DGA_min_",
-                                   fecha_ini,
-                                   "_",
-                                   fecha_fin,
-                                   "_",
-                                   ultimo_mes,
-                                   ".csv"), row.names = FALSE)
-  
-  print("Se escribió la base de datos nueva")
-  
-  #cargar bbdd antigua
-  #Mean
-  temp_DGA_mean_antigua<-read.csv(paste0(directorio,
-                                  "/BBDD/temp/DGA/mean/temp_DGA_mean_",
-                                  "2022",
-                                  "_",
-                                  fecha_fin,
-                                  "_",
-                                  penultimo_mes,
-                                  ".csv")) 
-  temp_DGA_mean_antigua<- temp_DGA_mean_antigua %>%
-    filter(Year<ultimo_ano)
-  
-  temp_DGA_mean_actualizada<-rbind(temp_DGA_mean_antigua, temp_DGA_nueva_mean)
-  
-  temp_DGA_mean_actualizada<- temp_DGA_mean_actualizada %>%
-    filter(!(Year==ultimo_ano & Month>ultimo_mes))
-  
-  write.csv(temp_DGA_mean_actualizada, paste0(directorio,
-                                              "/BBDD/temp/DGA/mean/temp_DGA_mean_",
-                                              "2022",
-                                              "_",
-                                              fecha_fin,
-                                              "_",
-                                              ultimo_mes,
-                                              ".csv"), row.names = FALSE)
-  #Max
-  temp_DGA_max_antigua<-read.csv(paste0(directorio,
-                                         "/BBDD/temp/DGA/max/temp_DGA_max_",
-                                         "2022",
-                                         "_",
-                                         fecha_fin,
-                                         "_",
-                                         penultimo_mes,
-                                         ".csv")) 
-  temp_DGA_max_antigua<- temp_DGA_max_antigua %>%
-    filter(Year<ultimo_ano)
-  
-  temp_DGA_max_actualizada<-rbind(temp_DGA_max_antigua, temp_DGA_nueva_max)
-  
-  temp_DGA_max_actualizada<- temp_DGA_max_actualizada %>%
-    filter(!(Year==ultimo_ano & Month>ultimo_mes))
-  
-  write.csv(temp_DGA_max_actualizada, paste0(directorio,
-                                              "/BBDD/temp/DGA/max/temp_DGA_max_",
-                                              "2022",
-                                              "_",
-                                              fecha_fin,
-                                              "_",
-                                              ultimo_mes,
-                                              ".csv"), row.names = FALSE)
-  
-  #Min
-  temp_DGA_min_antigua<-read.csv(paste0(directorio,
-                                         "/BBDD/temp/DGA/min/temp_DGA_min_",
-                                         "2022",
-                                         "_",
-                                         fecha_fin,
-                                         "_",
-                                         penultimo_mes,
-                                         ".csv")) 
-  temp_DGA_min_antigua<- temp_DGA_min_antigua %>%
-    filter(Year<ultimo_ano)
-  
-  temp_DGA_min_actualizada<-rbind(temp_DGA_min_antigua, temp_DGA_nueva_min)
-  
-  temp_DGA_min_actualizada<- temp_DGA_min_actualizada %>%
-    filter(!(Year==ultimo_ano & Month>ultimo_mes))
-  
-  write.csv(temp_DGA_min_actualizada, paste0(directorio,
-                                              "/BBDD/temp/DGA/min/temp_DGA_min_",
-                                              "2022",
-                                              "_",
-                                              fecha_fin,
-                                              "_",
-                                              ultimo_mes,
-                                              ".csv"), row.names = FALSE)
-  print("Actualización exitosa")
-  
-}
+  #metadatos_pozos_dga <- read.csv(paste0(directorio_base, "/otros/capas a csv/pozos.csv"))
+
+  directorio_archivo = obtener_directorio(variable, fuente)
+  archivo_mas_grande = buscar_archivo_mas_grande(directorio_archivo)
+  #Si hay archivos en la base de datos, se descarga desde el año de la última fecha en la base de datos (ano_fin)
+  #variables ano_ini y mes_fin servirán para luego actualizar los archivos descargados en la bddd
+  #variable ano_fin servirá para definir el rango de fechas a descargar, es el año al cual esta actualizada la bdd de la variable
+  if(length(archivo_mas_grande) != 0 && length(obtener_fechas_archivo(archivo_mas_grande)) != 0){
+    list_fechas = obtener_fechas_archivo(archivo_mas_grande)
+    ano_ini = list_fechas$ano_ini
+    ano_fin = list_fechas$ano_fin
+    mes_fin = as.numeric(list_fechas$mes_fin)
+    if(ano_fin == ano_actual && mes_fin == mes_ultimo){
+      print(paste("La base de datos de", variable, fuente, "está actualizada"))
+    }
+    else{ 
+      print(paste("La base de datos de", variable, fuente, "contiene datos desde", ano_ini, "hasta", ano_fin, "mes", mes_fin))
+      print(paste("Descargando datos desde", ano_fin, "hasta", ano_actual, "mes", mes_ultimo, "variable", variable, fuente))
+      data_nueva = descargar_variable(variable, fuente, ano_fin, ano_actual, mes_ultimo, metadata_DGA_pozos, 
+        metadata_DGA_caudal, metadata_DGA_pp_y_temp, metadatos_DMC)
 
 
-#TEMP_MAX DMC
-if(variable=="temp_max" & tolower(fuente)=="dmc"){
-  temp_max_DMC_nueva<-descargar_temp_max_DMC(fecha_ini, fecha_fin, estaciones = metadatos_DMC)
-  print("Actualización exitosa")
-}
-
-#TEMP_MIN DMC
-if(variable=="temp_min" & tolower(fuente)=="dmc"){
-  temp_min_DMC_nueva<-descargar_temp_min_DMC(fecha_ini, fecha_fin, estaciones = metadatos_DMC)
-  print("Actualización exitosa")
-}
-
-#Caudal DGA
-if(variable=="caudal" & tolower(fuente)=="dga"){
-  q_nueva<-descargar_caudal_DGA(fecha_ini, fecha_fin, estaciones = metadatos_DGA)
-  print("Actualización exitosa")
-  
-  write.csv(q_nueva, paste0(directorio,
-                                 "/BBDD/q/DGA/bruto/q_mean_DGA_",
-                                 fecha_ini,
-                                 "_",
-                                 fecha_fin,
-                                 "_",
-                                 ultimo_mes,
-                                 ".csv"), row.names = FALSE)
-  print("Se escribió la base de datos nueva")
-  
-  q_antigua<-read.csv(paste0(directorio,
-                                  "/BBDD/q/DGA/bruto/q_",
-                                  "2020",
-                                  "_",
-                                  fecha_fin,
-                                  "_",
-                                  penultimo_mes,
-                                  ".csv")) 
-  
-  pp_DMC_antigua<- pp_DMC_antigua %>%
-    filter(Year<ultimo_ano)
-  
-  print("Se realizó la lectura de la base de datos antigua")
-  pp_DMC_actualizada<-rbind(pp_DMC_antigua, pp_DMC_nueva)
-  print("Se concatenaron las bases de datos")
-  write.csv(pp_DMC_actualizada, paste0(directorio,
-                                       "/BBDD/pp/DMC/bruto/pp_DMC_",
-                                       "2020",
-                                       "_",
-                                       fecha_fin,
-                                       "_",
-                                       ultimo_mes,
-                                       ".csv"), row.names = FALSE)
-  print("Actualización exitosa")
-  
-}
-
-
+      concatenar_datos(data_nueva, list_fechas, ano_actual, mes_ultimo, variable, fuente, directorio_archivo)
+      print(paste("Datos de", variable, fuente, "actualizados"))
+      }
+    }
+  else {
+    #si la base de datos está vacía, se le pregunta al usuario desde que año desea descargar
+    print(paste("La base de datos de", variable, fuente, "está vacía"))
+    ano_ini = solicitar_ano()
+    print(paste("Descargando datos desde", ano_ini, "hasta", ano_actual, "mes", mes_ultimo, "variable", variable, fuente))
+    data_nueva = descargar_variable(variable, fuente, ano_ini, ano_actual, mes_ultimo, metadata_DGA_pozos, 
+      metadata_DGA_caudal, metadata_DGA_pp_y_temp, metadatos_DMC)
+    #Guardar datos en la base de datos
+    guardar_datos(data_nueva, ano_ini, ano_actual, mes_ultimo, variable, fuente, directorio_archivo)
+    print(paste("Datos de", variable, fuente, "actualizados"))
+  }
 
 }
+
+  
+

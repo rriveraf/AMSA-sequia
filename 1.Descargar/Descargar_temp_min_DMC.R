@@ -100,8 +100,13 @@ descargar_temp_min_DMC<-function(ano_inicio, ano_actual, mes_ultimo, estaciones)
   result <- temp %>% 
     filter(temp_min>= -50 | is.na(temp_min), temp_min <= 50 | is.na(temp_min))
 
+  result$Month <- as.numeric(result$Month)
+  result$Year <- as.numeric(result$Year)
+
   result <- result %>% 
     filter(!(Year == ano_actual & Month > as.numeric(mes_ultimo)))
+
+  
 
   return(result)
   beepr::beep(8)

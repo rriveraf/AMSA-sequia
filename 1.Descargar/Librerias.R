@@ -10,3 +10,5 @@ for (libreria in bibliotecas) {
   # Cargar la biblioteca
   library(libreria, character.only = TRUE)
 }
+
+

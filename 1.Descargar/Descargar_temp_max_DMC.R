@@ -105,9 +105,12 @@ descargar_temp_max_DMC<-function(ano_inicio, ano_actual, mes_ultimo, estaciones)
     filter(temp_max>= -50 | is.na(temp_max), temp_max <= 50 | is.na(temp_max))
 
 
+  result$Month<-as.numeric(result$Month)
+
   result <- result %>% 
     filter(!(Year == ano_actual & Month > as.numeric(mes_ultimo)))
 
+  
   return(result)
   beepr::beep(8)
 

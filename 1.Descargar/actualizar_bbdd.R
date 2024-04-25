@@ -1,8 +1,3 @@
-actualizar_datos(getwd(), "niveles_pozos", "DGA")
-
-actualizar_datos(getwd(), "pp", "DGA")
-
-actualizar_datos(getwd(), "caudal", "DGA")
 
 actualizar_datos<-function(directorio_base, variable, fuente){
 ################ MANEJO DE ERRORES #############################

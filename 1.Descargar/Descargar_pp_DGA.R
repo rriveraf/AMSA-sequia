@@ -40,13 +40,13 @@ descargar_pp_DGA<-function(ano_inicio, ano_actual, mes_ultimo, estaciones){
         tabla$Month <- month(tabla$fecha)
         tabla$Year <- year(tabla$fecha)
         tabla$Day <- day(tabla$fecha)
-        
+      
         tabla <- tabla %>%
           #group_by(Year, Month) %>%
-          mutate(pp_day = pp_min - lag(pp_min, default = 0)) %>%
-          mutate(Codigo_nacional= substring(url, 85, 94))%>% 
-          select(Day, Month,Year, pp_day, Codigo_nacional)
-      
+          mutate(pp_day = ifelse(lag(pp_min, default = 0) >= 0, pp_min - lag(pp_min, default = 0), pp_min)) %>%
+          mutate(Codigo_nacional = substring(url, 85, 94)) %>%
+          select(Day, Month, Year, pp_day, Codigo_nacional)
+
       #En caso de que no haya informacion disponible:
       if (nrow(tabla) > 0) {
         return(tabla)
@@ -58,12 +58,13 @@ descargar_pp_DGA<-function(ano_inicio, ano_actual, mes_ultimo, estaciones){
     
     }, error = function(e) {
       # En caso de que la conexión tire ERROR:
+      message("An error occurred: ", conditionMessage(e))
       return(data.frame(Year=as.numeric(substring(url, 328, 331)),
                         Day=NA,
                         Month=NA,
                         pp_day=NA,
                         Codigo_nacional=substring(url, 85, 94)))
-      message("An error occurred: ", conditionMessage(e))
+      
     })
  
 }  
@@ -98,3 +99,6 @@ descargar_pp_DGA<-function(ano_inicio, ano_actual, mes_ultimo, estaciones){
   beepr::beep(8)
   return(result)
 }
+
+
+

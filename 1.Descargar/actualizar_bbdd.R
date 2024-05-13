@@ -1,4 +1,6 @@
-
+actualizar_datos(getwd(), "temp_max", "dmc")
+actualizar_datos(getwd(), "temp_min", "dmc")
+2020
 actualizar_datos<-function(directorio_base, variable, fuente){
 ################ MANEJO DE ERRORES #############################
 
@@ -33,7 +35,7 @@ actualizar_datos<-function(directorio_base, variable, fuente){
 
   #Definir estaciones a descargar
   #metadatos_DGA<-read_excel(paste0(directorio_base,"/BBDD/metadatos/DGA/estaciones_DGA.xlsx"))
-  metadatos_DMC<-read_excel(paste0(directorio_base,"/BBDD/metadatos/DMC/estaciones_DMC.xlsx"))
+  metadatos_DMC_path = paste0(directorio_base,"/BBDD/metadatos/DMC/estaciones_DMC.xlsx")
 
   csv_metadata_pozos_path = paste0(directorio_base, "/BBDD/metadatos/DGA/pozos/estaciones_DGA_pozos.csv")
   csv_metadata_caudal_path = paste0(directorio_base, "/BBDD/metadatos/DGA/caudal/estaciones_DGA_caudal.csv")
@@ -46,7 +48,6 @@ actualizar_datos<-function(directorio_base, variable, fuente){
   LAT = col_double(),
   LONG = col_double(),
   Altura = col_integer(),
-  TIPO = col_character(),
   COD_CUEN = col_integer(),
   COD_SUBC = col_integer(),
   COD_SSUBC = col_integer(),
@@ -63,8 +64,9 @@ actualizar_datos<-function(directorio_base, variable, fuente){
   metadata_DGA_pozos <- read_csv(csv_metadata_pozos_path, col_types = tipos)
   metadata_DGA_caudal <- read_csv(csv_metadata_caudal_path, col_types = tipos)
   metadata_DGA_pp_y_temp <- read_csv(csv_metadata_pp_y_temp_path, col_types = tipos)
+  metadatos_DMC <- read_excel(metadatos_DMC_path)
 
-  
+
   #metadatos_pozos_dga <- read.csv(paste0(directorio_base, "/otros/capas a csv/pozos.csv"))
 
   directorio_archivo = obtener_directorio(variable, fuente)

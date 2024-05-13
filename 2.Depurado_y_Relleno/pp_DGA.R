@@ -6,7 +6,7 @@ source(paste0(directorio_base, "/2.Depurado_y_Relleno/funciones.R"))
 #AGREGAR LUEGO COMO PARÁMETROS DE FUNCIÓN
 tolerancia_km = 50
 
-pp_DGA = read.csv(paste0(directorio_base, "/BBDD/pp/DGA/bruto/pp_DGA_2023_2024_3.csv"))
+pp_DGA = read.csv(paste0(directorio_base, "/BBDD/pp/DGA/bruto/pp_DGA_2020_2024_4.csv"))
 metadatos_pp = read.csv(paste0(directorio_base, "/BBDD/metadatos/DGA/pp_y_temp/estaciones_DGA_pp_y_temp.csv"))
 head(metadatos_pp)
 
@@ -14,18 +14,23 @@ head(metadatos_pp)
 #pp_DGA$pp_day[pp_DGA$pp_day < 0 | pp_DGA$pp_day >= 800] <- NA
 
 #borrar entradas invalidas, asi quitar estaciones inactivas
+pp_DGA$pp_day[pp_DGA$pp_day < 0 | pp_DGA$pp_day >= 400] <- NA
+summary(pp_DGA)
 pp_DGA <- drop_na(pp_DGA)
 
 #eliminar duplicados
 pp_DGA <- unique(pp_DGA)
 
 
+
 #contamos la cantidad de mediciciones para cada estacion en el periodo de tiempo
 count_estaciones <- pp_DGA %>% group_by(Codigo_nacional) %>% summarise(n = n()) %>% arrange(desc(n))
 
+
+
 #OJO AL FUTURO PARA AUTOMATIZAR ESTO
 #obtenemos fechas del archivo
-fechas_archivo <- obtener_fechas_archivo(paste0(directorio_base, "/BBDD/pp/DGA/bruto/pp_DGA_2023_2024_3.csv"))
+fechas_archivo <- obtener_fechas_archivo(paste0(directorio_base, "/BBDD/pp/DGA/bruto/pp_DGA_2020_2024_4.csv"))
 
 #calculamos el mínimo número de datos que debería tener una estación según las fechas del archivo. se fija una completitud del 70%
 n_minimo_datos = ((fechas_archivo$ano_fin - fechas_archivo$ano_ini) * 365 + fechas_archivo$mes_fin*30) * 0.7
@@ -90,6 +95,7 @@ pp_DGA_relleno <- pp_DGA_relleno %>%
   ) %>%
   ungroup()
 
+summary(pp_DGA_relleno)
 #1483 NA's
 # PASO 3: ahora rellenamos los valores faltantes con la mediana anual de la estacion
 pp_DGA_relleno <- pp_DGA_relleno %>%
@@ -110,6 +116,8 @@ pp_DGA_relleno <- pp_DGA_relleno %>%
 
 
 
+summary(pp_DGA_relleno)
 
 
-write.csv(pp_DGA_relleno, paste0(directorio_base, "/BBDD/pp/DGA/depurado/pp_DGA_2023_2024_3.csv"), row.names = FALSE)
+
+write.csv(pp_DGA_relleno, paste0(directorio_base, "/BBDD/pp/DGA/depurado/pp_DGA_2020_2024_4.csv"), row.names = FALSE)

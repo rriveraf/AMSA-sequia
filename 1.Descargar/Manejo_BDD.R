@@ -71,7 +71,7 @@ obtener_fechas_archivo <- function(ruta_archivo) {
     #variables ano_ini y mes_fin servirán para luego actualizar los archivos descargados en la bddd
     #variable ano_fin servirá para definir el rango de fechas a descargar, es el año al cual esta actualizada la bdd de la variable
     return(list(ano_ini = ano_ini, ano_fin = ano_fin, mes_fin = mes_fin))
-}  
+}   
 
 descargar_variable <- function(variable, fuente, ano_inicio, ano_actual, mes_ultimo, metadata_DGA_pozos,
  metadata_DGA_caudal, metadata_DGA_pp_y_temp, estaciones_dmc) {

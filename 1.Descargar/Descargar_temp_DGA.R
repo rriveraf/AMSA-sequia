@@ -67,6 +67,7 @@ descargar_temp_DGA<-function(ano_inicio, ano_actual, mes_ultimo, estaciones){
 
     }, error = function(e) {
       # En caso de que la conexión tire ERROR:
+      message("An error occurred: ", conditionMessage(e))
       return(data.frame(Year=as.numeric(substring(url, 327, 330)),
                         Day=NA,
                         Month=NA,
@@ -74,7 +75,7 @@ descargar_temp_DGA<-function(ano_inicio, ano_actual, mes_ultimo, estaciones){
                         temp_max=NA,
                         temp_min=NA,
                         Codigo_nacional=substring(url, 85, 94)))
-      message("An error occurred: ", conditionMessage(e))
+      
     })
 
   }  
@@ -112,3 +113,5 @@ descargar_temp_DGA<-function(ano_inicio, ano_actual, mes_ultimo, estaciones){
   beepr::beep(8)
 
 }
+
+

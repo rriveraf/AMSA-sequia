@@ -118,4 +118,4 @@ descargar_pp_DMC<-function(ano_inicio, ano_actual, mes_ultimo, estaciones){
 
 
 }
-
+#pp_dmc <- descargar_pp_DMC(ano_inicio = 2020, ano_actual = 2024, mes_ultimo = 4, estaciones = metadatos_DMC)

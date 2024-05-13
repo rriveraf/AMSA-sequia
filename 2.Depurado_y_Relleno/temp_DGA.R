@@ -7,17 +7,18 @@ source(paste0(directorio_base, "/2.Depurado_y_Relleno/funciones.R"))
 
 tolerancia_km = 50
 
-#carga de archivos
-##ESTO LUEGO QUE PASE COMO PARAMETROS DE FUNCIÓN	
-temp_DGA_min = read.csv(paste0(directorio_base, "/BBDD/temp/DGA/min/temp_DGA_min_2023_2024_3.csv"))
-temp_DGA_max = read.csv(paste0(directorio_base, "/BBDD/temp/DGA/max/temp_DGA_max_2023_2024_3.csv"))
-temp_DGA_mean = read.csv(paste0(directorio_base, "/BBDD/temp/DGA/mean/temp_DGA_mean_2023_2024_3.csv"))
+##carga de archivos
+###ESTO LUEGO QUE PASE COMO PARAMETROS DE FUNCIÓN	
+#temp_DGA_min = read.csv(paste0(directorio_base, "/BBDD/temp/DGA/min/temp_DGA_min_2023_2024_3.csv"))
+#temp_DGA_max = read.csv(paste0(directorio_base, "/BBDD/temp/DGA/max/temp_DGA_max_2023_2024_3.csv"))
+#temp_DGA_mean = read.csv(paste0(directorio_base, "/BBDD/temp/DGA/mean/temp_DGA_mean_2023_2024_3.csv"))
+temp_DGA = read.csv(paste0(directorio_base, "/BBDD/temp/DGA/bruto/temp_DGA_2020_2024_3.csv"))
 metadatos_temp = read.csv(paste0(directorio_base, "/BBDD/metadatos/DGA/pp_y_temp/estaciones_DGA_pp_y_temp.csv"))
 
 #juntar todo en un archivo
-temp_DGA <- temp_DGA_min
-temp_DGA$temp_mean <- temp_DGA_mean$temp_mean
-temp_DGA$temp_max <- temp_DGA_max$temp_max
+#temp_DGA <- temp_DGA_min
+#temp_DGA$temp_mean <- temp_DGA_mean$temp_mean
+#temp_DGA$temp_max <- temp_DGA_max$temp_max
 
 summary(temp_DGA)
 #    temp_min         temp_mean         temp_max
@@ -29,9 +30,10 @@ summary(temp_DGA)
 # Max.   : 48.000   Max.   : 48.00   Max.   : 50.00
 
 #marcar outliers
-temp_DGA$temp_min[temp_DGA$temp_min <= -20 | temp_DGA$temp_min >= 45] <- NA
-temp_DGA$temp_max[temp_DGA$temp_max <= -20 | temp_DGA$temp_max >= 45] <- NA
-temp_DGA$temp_mean[temp_DGA$temp_mean <= -20 | temp_DGA$temp_mean >= 45] <- NA
+temp_DGA$temp_min[temp_DGA$temp_min <= -20 | temp_DGA$temp_min >= 42] <- NA
+temp_DGA$temp_max[temp_DGA$temp_max <= -20 | temp_DGA$temp_max >= 42] <- NA
+#temp_DGA$temp_mean[temp_DGA$temp_mean <= -20 | temp_DGA$temp_mean >= 45] <- NA
+
 
 summary(temp_DGA)
 
@@ -56,7 +58,7 @@ count_estaciones <- temp_DGA  %>% group_by(Codigo_nacional) %>% summarise (n = n
 
 #OJO AL FUTURO PARA AUTOMATIZAR ESTO
 #obtenemos fechas del archivo
-fechas_archivo <- obtener_fechas_archivo(paste0(directorio_base, "/BBDD/temp/DGA/min/temp_DGA_min_2023_2024_3.csv"))
+fechas_archivo <- obtener_fechas_archivo(paste0(directorio_base, "/BBDD/temp/DGA/bruto/temp_DGA_2020_2024_3.csv"))
 
 #calculamos el mínimo número de datos que debería tener una estación según las fechas del archivo. se fija una completitud del 70%
 n_minimo_datos = ((fechas_archivo$ano_fin - fechas_archivo$ano_ini) * 365 + fechas_archivo$mes_fin*30) * 0.7
@@ -87,7 +89,7 @@ temp_DGA_relleno <- rellenar_fechas(temp_DGA_validas)
 
 #ordenar columnas
 temp_DGA_relleno <- temp_DGA_relleno %>%
-  select(Year, Month, Day, Codigo_nacional, temp_min, temp_mean, temp_max)
+  select(Year, Month, Day, Codigo_nacional, temp_min, temp_max)
 
 
 
@@ -114,10 +116,10 @@ for(i in 1:nrow(temp_DGA_relleno)){
     Month <- registro$Month
     Day <- registro$Day
     imputacion_temp_min <- obtener_valor(temp_DGA_relleno, estacion_mas_cercana$mas_cercana, Year, Month, Day, "temp_min")
-    imputacion_temp_mean <- obtener_valor(temp_DGA_relleno, estacion_mas_cercana$mas_cercana, Year, Month, Day, "temp_mean")
+    #imputacion_temp_mean <- obtener_valor(temp_DGA_relleno, estacion_mas_cercana$mas_cercana, Year, Month, Day, "temp_mean")
     imputacion_temp_max <- obtener_valor(temp_DGA_relleno, estacion_mas_cercana$mas_cercana, Year, Month, Day, "temp_max")
     temp_DGA_relleno$temp_min[i] <- imputacion_temp_min
-    temp_DGA_relleno$temp_mean[i] <- imputacion_temp_mean
+    #temp_DGA_relleno$temp_mean[i] <- imputacion_temp_mean
     temp_DGA_relleno$temp_max[i] <- imputacion_temp_max
   }
 }
@@ -135,7 +137,7 @@ temp_DGA_relleno <- temp_DGA_relleno %>%
   group_by(Codigo_nacional, Year, Month) %>%
   mutate(
     temp_min = ifelse(is.na(temp_min), ave(temp_min, FUN = function(x) mean(x, na.rm = TRUE)), temp_min),
-    temp_mean = ifelse(is.na(temp_mean), ave(temp_mean, FUN = function(x) mean(x, na.rm = TRUE)), temp_mean),
+    #temp_mean = ifelse(is.na(temp_mean), ave(temp_mean, FUN = function(x) mean(x, na.rm = TRUE)), temp_mean),
     temp_max = ifelse(is.na(temp_max), ave(temp_max, FUN = function(x) mean(x, na.rm = TRUE)), temp_max)
   ) %>%
   ungroup() 
@@ -150,7 +152,7 @@ temp_DGA_relleno <- temp_DGA_relleno %>%
   group_by(Codigo_nacional, Year) %>%
   mutate(
     temp_min = ifelse(is.na(temp_min), mean(temp_min, na.rm = TRUE), temp_min),
-    temp_mean = ifelse(is.na(temp_mean), mean(temp_mean, na.rm = TRUE), temp_mean),
+    #temp_mean = ifelse(is.na(temp_mean), mean(temp_mean, na.rm = TRUE), temp_mean),
     temp_max = ifelse(is.na(temp_max), mean(temp_max, na.rm = TRUE), temp_max)
   ) %>%
   ungroup()
@@ -162,18 +164,18 @@ temp_DGA_relleno <- temp_DGA_relleno %>%
   group_by(Year) %>%
   mutate(
     temp_min = ifelse(is.na(temp_min), mean(temp_min, na.rm = TRUE), temp_min),
-    temp_mean = ifelse(is.na(temp_mean), mean(temp_mean, na.rm = TRUE), temp_mean),
+    #temp_mean = ifelse(is.na(temp_mean), mean(temp_mean, na.rm = TRUE), temp_mean),
     temp_max = ifelse(is.na(temp_max), mean(temp_max, na.rm = TRUE), temp_max)
   ) %>%
   ungroup()
 
 #corregir temp mean 
-temp_DGA_relleno$temp_mean = (temp_DGA_relleno$temp_min + temp_DGA_relleno$temp_max) / 2 
+#temp_DGA_relleno$temp_mean = (temp_DGA_relleno$temp_min + temp_DGA_relleno$temp_max) / 2 
 
 
 summary(temp_DGA_relleno)
 
-write.csv(temp_DGA_relleno, paste0(directorio_base, "/BBDD/temp/DGA/depurado/temp_DGA_2023_2024_3.csv"), row.names = FALSE)
+write.csv(temp_DGA_relleno, paste0(directorio_base, "/BBDD/temp/DGA/depurado/temp_DGA_2020_2024_3.csv"), row.names = FALSE)
 
 
 

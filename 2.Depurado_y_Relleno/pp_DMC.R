@@ -6,14 +6,16 @@ source(paste0(directorio_base, "/2.Depurado_y_Relleno/funciones.R"))
 #AGREGAR LUEGO COMO PARÁMETROS DE FUNCIÓN
 tolerancia_km = 50
 
-pp_DMC = read.csv(paste0(directorio_base, "/BBDD/pp/DMC/bruto/pp_DMC_2023_2024_3.csv"))
+pp_DMC = read.csv(paste0(directorio_base, "/BBDD/pp/DMC/bruto/pp_DMC_2020_2024_4.csv"))
 metadatos_pp_dmc = read_excel(paste0(directorio_base, "/BBDD/metadatos/DMC/estaciones_DMC.xlsx"))
 
 #marcar outliers
-pp_DMC$pp_day[pp_DMC$pp_day < 0] <- NA
+pp_DMC$pp_day[pp_DMC$pp_day < 0 | pp_DMC$pp_day > 700] <- NA
 
+head(pp_DMC)
 #borrar entradas invalidas, asi quitar estaciones inactivas
 pp_DMC <- drop_na(pp_DMC)
+
 
 #eliminar duplicados
 pp_DMC <- unique(pp_DMC)
@@ -23,7 +25,7 @@ count_estaciones <- pp_DMC %>% group_by(Codigo_nacional) %>% summarise(n = n()) 
 
 #OJO AL FUTURO PARA AUTOMATIZAR ESTO
 #obtenemos fechas del archivo
-fechas_archivo <- obtener_fechas_archivo(paste0(directorio_base, "/BBDD/pp/DMC/bruto/pp_DMC_2023_2024_3.csv"))
+fechas_archivo <- obtener_fechas_archivo(paste0(directorio_base, "/BBDD/pp/DMC/bruto/pp_DMC_2020_2024_4.csv"))
 
 #calculamos el mínimo número de datos que debería tener una estación según las fechas del archivo. se fija una completitud del 70%
 n_minimo_datos = ((fechas_archivo$ano_fin - fechas_archivo$ano_ini) * 365 + fechas_archivo$mes_fin*30) * 0.7
@@ -94,4 +96,4 @@ summary(pp_DMC_relleno)
 
 # 0 NA's
 
-write.csv(pp_DMC_relleno, paste0(directorio_base, "/BBDD/pp/DMC/depurado/pp_DMC_2023_2024_3.csv"), row.names = FALSE)
+write.csv(pp_DMC_relleno, paste0(directorio_base, "/BBDD/pp/DMC/depurado/pp_DMC_2020_2024_4.csv"), row.names = FALSE)

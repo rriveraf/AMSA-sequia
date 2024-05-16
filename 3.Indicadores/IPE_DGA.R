@@ -13,7 +13,7 @@ pp_day_dga_2020_actual <- read.csv(paste0(directorio_base, "/BBDD/pp/DGA/depurad
 
 head(pp_day_dga_2020_actual)
 
-#calcula|mos precipitación mensual
+#calculamos precipitación mensual
 pp_mensual_2020_actual <- pp_day_dga_2020_actual %>%
   group_by(Year, Month, Codigo_nacional) %>%
   summarise(pp_month = sum(pp_day, na.rm = TRUE)) %>%

@@ -29,7 +29,7 @@ descargar_caudal_DGA<-function(ano_inicio, ano_actual, mes_ultimo, estaciones){
     #INTENTAR descargar HTML, con recepción de error si no conecta.
 
     tryCatch({
-      html <- read_html(GET(url, add_headers("User-Agent" = "Mozilla/5.0")))
+      html <- read_html(GET(url, add_headers("User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36")))
       # Additional code you want to execute if successful
       #Extraer datos del html
       tabla<-html %>%
@@ -64,13 +64,14 @@ descargar_caudal_DGA<-function(ano_inicio, ano_actual, mes_ultimo, estaciones){
                                  Codigo_nacional=substring(url, 85, 94))) }
 
     }, error = function(e) {
+      message("An error occurred: ", conditionMessage(e))
       # En caso de que la conexión tire ERROR:
       return(data.frame(Year=as.numeric(substring(url, 322, 325)),
                         Day=NA,
                         Month=NA,
                         caudal_mean=NA,
                         Codigo_nacional=substring(url, 85, 94)))
-      message("An error occurred: ", conditionMessage(e))
+      
     })
 
   }  
@@ -90,6 +91,7 @@ descargar_caudal_DGA<-function(ano_inicio, ano_actual, mes_ultimo, estaciones){
   for (i in 1:length(urls)){
 
     temp<-rbind(temp, getData(urls[i]))
+    Sys.sleep(0.5)
     print(paste0("Voy en el enlace web número: ",i, "de ",length(urls)))
 
   }
@@ -107,4 +109,7 @@ descargar_caudal_DGA<-function(ano_inicio, ano_actual, mes_ultimo, estaciones){
   return(result)
 
 }
+
+q = descargar_caudal_DGA(2020, 2024, 4, metadata_DGA_caudal)
+write.csv(q, "caudal_DGA_2020_2024_4.csv")
 

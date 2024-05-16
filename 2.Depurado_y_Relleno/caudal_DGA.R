@@ -5,7 +5,7 @@ directorio_base = getwd()
 source(paste0(directorio_base, "/2.Depurado_y_Relleno/funciones.R"))
 
 
-caudal_DGA = read.csv(paste0(directorio_base, "/BBDD/q/DGA/bruto/q_mean_DGA_2023_2024_4.csv"))
+caudal_DGA = read.csv(paste0(directorio_base, "/BBDD/q/DGA/bruto/q_mean_DGA_2020_2024_4.csv"))
 metadatos_caudal = read.csv(paste0(directorio_base, "/BBDD/metadatos/DGA/caudal/estaciones_DGA_caudal.csv"))
 
 summary(caudal_DGA)
@@ -25,7 +25,7 @@ count_estaciones <- caudal_DGA %>% group_by(Codigo_nacional) %>% summarise(n = n
 
 #OJO AL FUTURO PARA AUTOMATIZAR ESTO
 #obtenemos fechas del archivo
-fechas_archivo <- obtener_fechas_archivo(paste0(directorio_base, "/BBDD/q/DGA/bruto/q_mean_DGA_2023_2024_4.csv"))
+fechas_archivo <- obtener_fechas_archivo(paste0(directorio_base, "/BBDD/q/DGA/bruto/q_mean_DGA_2020_2024_4.csv"))
 
 #calculamos el mínimo número de datos que debería tener una estación según las fechas del archivo. se fija una completitud del 70%
 n_minimo_datos = ((fechas_archivo$ano_fin - fechas_archivo$ano_ini) * 365 + fechas_archivo$mes_fin*30) * 0.7
@@ -61,7 +61,7 @@ summary(caudal_DGA_relleno)
 #PASO 2: rellenamos con mediana anual de la estacion
 
 caudal_DGA_relleno <- caudal_DGA_relleno %>%
-  group_by(Codigo_nacional, Year) %>%
+  group_by(Codigo_nacional, Month) %>%
   mutate(
     caudal_mean = ifelse(is.na(caudal_mean), ave(caudal_mean, FUN = function(x) median(x, na.rm = TRUE)), caudal_mean)
   ) %>%
@@ -72,7 +72,7 @@ summary(caudal_DGA_relleno)
 
 #PASO 3: rellenamos con la mediana global, por seguridad si existe algún valor NA
 caudal_DGA_relleno <- caudal_DGA_relleno %>% 
-  group_by(Year) %>%
+  group_by(Codigo_nacional,) %>%
   mutate(
     caudal_mean = ifelse(is.na(caudal_mean), median(caudal_mean, na.rm = TRUE), caudal_mean)
   )
@@ -80,4 +80,4 @@ caudal_DGA_relleno <- caudal_DGA_relleno %>%
 summary(caudal_DGA_relleno)
 #0 NA's
 
-write.csv(caudal_DGA_relleno, paste0(directorio_base, "/BBDD/q/DGA/depurado/q_mean_DGA_2023_2024_3.csv"), row.names = FALSE)
+write.csv(caudal_DGA_relleno, paste0(directorio_base, "/BBDD/q/DGA/depurado/q_mean_DGA_2020_2024_4.csv"), row.names = FALSE)

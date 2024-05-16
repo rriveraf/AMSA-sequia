@@ -1,26 +1,26 @@
 
-
+#abrir archivo historico
 directorio_base = getwd()
 
-#cargar periodo historico
-pp_mensual_dmc_1979_2019 <- read.csv(paste0(directorio_base, "/BBDD/pp/DMC/periodo_historico/pp_DMC_monthly_1979_2019_cr2met.csv"))
-head(pp_mensual_dmc_1979_2019)
-names(pp_mensual_dmc_1979_2019)[names(pp_mensual_dmc_1979_2019) == "precipitacion_mensual"] <- "pp_month"
-summary(pp_mensual_dmc_1979_2019)
+#cargar periodo histórico
+pp_mensual_dga_1979_2019 <- read.csv(paste0(directorio_base, "/BBDD/pp/DGA/periodo_historico/pp_DGA_monthly_1979_2019_cr2met.csv"))
+head(pp_mensual_dga_1979_2019)
+names(pp_mensual_dga_1979_2019)[names(pp_mensual_dga_1979_2019) == "precipitacion_mensual"] <- "pp_month"
+summary(pp_mensual_dga_1979_2019)
 
 #cargar datos descargados
-pp_day_dmc_2020_actual <- read.csv(paste0(directorio_base, "/BBDD/pp/DMC/depurado/pp_DMC_2020_2024_4.csv"))
+pp_day_dga_2020_actual <- read.csv(paste0(directorio_base, "/BBDD/pp/DGA/depurado/pp_DGA_2020_2024_4.csv"))
 
-head(pp_day_dmc_2020_actual)
+head(pp_day_dga_2020_actual)
 
-#calcular precipitacion mensual
-pp_mensual_2020_actual <- pp_day_dmc_2020_actual %>%
+#calcula|mos precipitación mensual
+pp_mensual_2020_actual <- pp_day_dga_2020_actual %>%
   group_by(Year, Month, Codigo_nacional) %>%
   summarise(pp_month = sum(pp_day, na.rm = TRUE)) %>%
   ungroup()
 
 #generar dataframe completo de datos de precipitacion
-pp_mensual_completo <- rbind(pp_mensual_dmc_1979_2019, pp_mensual_2020_actual)
+pp_mensual_completo <- rbind(pp_mensual_dga_1979_2019, pp_mensual_2020_actual)
 
 
 #si PP == 0, entonces PP = 0.0001, Así evitar errores en el cálculo de SPI.
@@ -41,7 +41,8 @@ spi_dataframe <- pp_mensual_completo %>%
   ) %>%
   ungroup()
 
-#calculamos spi_1, spi_3, spi_6, spi_12, spi_24
+
+#calculamos spi_1, spi_3, spi_6, spi_12
 
 spi_dataframe <- spi_dataframe %>%
   group_by(Codigo_nacional) %>%
@@ -55,12 +56,13 @@ spi_dataframe <- spi_dataframe %>%
   ungroup()
 
 head(spi_dataframe)
+View(spi_dataframe)
 
-write.csv(spi_dataframe, paste0(directorio_base, "/BBDD/indicadores/IPE/DMC/IPE_DMC_1979_2024_4.csv"))
+write.csv(spi_dataframe, paste0(directorio_base, "/BBDD/indicadores/IPE/DGA/IPE_DGA_1979_2024_4.csv"))
 
-spi <- spi_dataframe %>% filter(Codigo_nacional == "10123006-6")
-
+spi_2023 <- spi_dataframe %>% filter(Year >= 2023) 
 
 head(spi_2023)
 
-write.csv(spi_2023, "DMC_spi_2023_2024_4.csv")
+write.csv(spi_2023, "v2_spi_2023_2024_4.csv")
+

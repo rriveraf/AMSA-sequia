@@ -24,7 +24,7 @@ rellenar_fechas <- function(dataframe){
 }
 
 
-estacion_mas_cercana_DGA <- function(codigo_estacion, metadata, tolerancia_km) {
+estacion_mas_cercana <- function(codigo_estacion, metadata, tolerancia_km) {
   # Obtener coordenadas de la estación dada por su código
   coords <- obtener_coordenadas(codigo_estacion, metadata)
   R <- 6371  # Radio de la Tierra en kilómetros

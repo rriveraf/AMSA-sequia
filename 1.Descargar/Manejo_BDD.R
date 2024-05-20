@@ -1,10 +1,4 @@
-
-#Cargamos las funciones para descargar datos  }
-directorio = getwd()
-nombres_funciones<-c("Descargar_pp_DGA.R", "Descargar_caudal_DGA.R", "Descargar_temp_DGA.R",
-                    "Descargar_pp_DMC.R", "Descargar_temp_max_DMC.R", "Descargar_temp_min_DMC.R",
-                    "Descargar_niveles_pozos_DGA.R")
-for(i in nombres_funciones){source(paste0(directorio, "/1.Descargar/", i))}
+# Description: Este script contiene las funciones necesarias para descargar y manejar la base de datos de precipitación, caudal, temperatura y niveles de pozos.
 
 obtener_directorio<-function(variable, fuente){
     directorio_base = getwd()
@@ -16,7 +10,7 @@ obtener_directorio<-function(variable, fuente){
         directorio = file.path(directorio_base, "BBDD", "pp", "DMC", "bruto")
     }
     else if (variable == "temp" & tolower(fuente) == "dga") {
-        directorio = file.path(directorio_base, "BBDD", "temp", "DGA", "max")
+        directorio = file.path(directorio_base, "BBDD", "temp", "DGA", "bruto")
     }
     else if(variable== "caudal" & tolower(fuente) == "dga") {
         directorio = file.path(directorio_base, "BBDD", "q", "DGA", "bruto")
@@ -101,26 +95,26 @@ descargar_variable <- function(variable, fuente, ano_inicio, ano_actual, mes_ult
     }
 }
 
-solicitar_ano <- function() {
-  ano_valido <- FALSE
-  ano <- NA  # Inicializar `ano` con NA (Not Available)
-  
-  while(!ano_valido) {
-    # Solicitar al usuario que ingrese el año
-    entrada <- readline(prompt = "Ingrese el año del que desea iniciar a descargar: ")
-    # encontrar el año actual y convertir la entrada a número (integer)
-    ano_actual <- as.integer(format(Sys.Date(), "%Y"))
-    ano <- as.integer(entrada)
-    
-    # Verificar si la entrada es un año válido
-    if(!is.na(ano) && ano > 0 && ano <= ano_actual && ano >= 1960) {
-      ano_valido <- TRUE
-    } else {
-      cat("Entrada no válida. Por favor, ingrese un año entre 1960 y el año actual.\n")
-    }
-  }
-  return(ano)
-}
+#solicitar_ano <- function() {
+#  ano_valido <- FALSE
+#  ano <- NA  # Inicializar `ano` con NA (Not Available)
+#  
+#  while(!ano_valido) {
+#    # Solicitar al usuario que ingrese el año
+#    entrada <- readline(prompt = "Ingrese el año del que desea iniciar a descargar: ")
+#    # encontrar el año actual y convertir la entrada a número (integer)
+#    ano_actual <- as.integer(format(Sys.Date(), "%Y"))
+#    ano <- as.integer(entrada)
+#    
+#    # Verificar si la entrada es un año válido
+#    if(!is.na(ano) && ano > 0 && ano <= ano_actual && ano >= 1979) {
+#      ano_valido <- TRUE
+#    } else {
+#      cat("Entrada no válida. Por favor, ingrese un año entre 1979 y el año actual.\n")
+#    }
+#  }
+#  return(ano)
+#}
 
 guardar_datos <- function(data_nueva, ano_inicio, ano_actual, mes_ultimo, variable, fuente, directorio_archivo){
     # esta función se ejecuta sólo si la bdd está vacía al descargar los datos
@@ -132,18 +126,7 @@ guardar_datos <- function(data_nueva, ano_inicio, ano_actual, mes_ultimo, variab
         write.csv(data_nueva, file = paste0(directorio_archivo, "/q_mean_DGA_", ano_inicio, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
     }
     else if(variable == "temp" & tolower(fuente) == "dga"){
-        #eliminar el "/max" del directorio de temperatura
-        directorio_temp <- gsub("/max$", "", directorio_archivo)
-    
-        data_nueva_mean<- data_nueva %>%
-                            select(Year, Month, Day, Codigo_nacional, temp_mean)
-        write.csv(data_nueva_mean, file = paste0(directorio_temp, "/mean/temp_DGA_mean_", ano_inicio, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
-        data_nueva_max<- data_nueva %>%
-                            select(Year, Month, Day, Codigo_nacional, temp_max)
-        write.csv(data_nueva_max, file = paste0(directorio_temp, "/max/temp_DGA_max_", ano_inicio, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
-        data_nueva_min<- data_nueva %>%
-                            select(Year, Month, Day, Codigo_nacional, temp_min)
-        write.csv(data_nueva_min, file = paste0(directorio_temp, "/min/temp_DGA_min_", ano_inicio, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
+        write.csv(data_nueva, file = paste0(directorio_archivo, "/temp_DGA_", ano_inicio, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
     }
     else if(variable == "niveles_pozos" & tolower(fuente) == "dga"){
         write.csv(data_nueva, file = paste0(directorio_archivo, "/niveles_pozos_DGA_", ano_inicio, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
@@ -174,82 +157,103 @@ concatenar_datos <- function(data_nueva, list_fechas, ano_actual, mes_ultimo, va
 
     #filtramos quitando eliminando las entradas del año en que se comenzó a descargar los datos, para luego concatenar
 
-    if(variable == "pp" & tolower(fuente) == "dga"){
-       data_vieja = read.csv(paste0(directorio_archivo, "/pp_DGA_", ano_ini_bdd, "_", ano_fin_bdd, "_", mes_fin, ".csv"))
+    if(variable == "pp" && tolower(fuente) == "dga"){
+       archivo_antiguo = paste0(directorio_archivo, "/pp_DGA_", ano_ini_bdd, "_", ano_fin_bdd, "_", mes_fin, ".csv")
+       data_vieja = read.csv(archivo_antiguo)
        data_vieja = data_vieja<- data_vieja %>% 
         filter(Year<ano_fin_bdd)
        pp_actualizada = rbind(data_vieja, data_nueva)
-       write.csv(pp_actualizada, file = paste0(directorio_archivo, "/pp_DGA_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
-        
+       archivo_nuevo = paste0(directorio_archivo, "/pp_DGA_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv")
+       write.csv(pp_actualizada, file = archivo_nuevo, row.names = FALSE)
+       if(file.exists(archivo_nuevo)){
+            print(paste0("La base de datos de ", variable, " ", fuente, " ha sido actualizada correctamente."))
+            file.remove(archivo_antiguo)
+        }
+        else{
+            print(paste0("El archivo nuevo de ", variable, " ", fuente, " no se ha creado correctamente."))
+        }
     }   
-    else if(variable == "caudal" & tolower(fuente) == "dga"){
-        data_vieja = read.csv(paste0(directorio_archivo, "/q_mean_DGA_", ano_ini_bdd, "_", ano_fin_bdd, "_", mes_fin, ".csv"))
+    else if(variable == "caudal" && tolower(fuente) == "dga"){
+        archivo_antiguo = paste0(directorio_archivo, "/q_mean_DGA_", ano_ini_bdd, "_", ano_fin_bdd, "_", mes_fin, ".csv")
+        data_vieja = read.csv(archivo_antiguo)
         data_vieja = data_vieja<- data_vieja %>% 
-        filter(Year<ano_fin_bdd)
+        filter(Year<ano_fin_bdd)|
         q_actualizada = rbind(data_vieja, data_nueva)
-        write.csv(q_actualizada, file = paste0(directorio_archivo, "/q_mean_DGA_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
-    }
-    else if(variable == "temp" & tolower(fuente) == "dga"){
-        #eliminar el "/max" del directorio de temperatura
-        directorio_temp <- gsub("/max$", "", directorio_archivo)
 
-        #obtener archivos existentes y filtrar eliminando el ultimo año de actualizacion
-        data_vieja_mean = read.csv(paste0(directorio_temp, "/mean/temp_DGA_mean_", ano_ini_bdd, "_", ano_fin_bdd, "_", mes_fin, ".csv"))
-        data_vieja_mean = data_vieja_mean<- data_vieja_mean %>% 
-            filter(Year<ano_fin_bdd)
-        data_vieja_max = read.csv(paste0(directorio_temp, "/max/temp_DGA_max_", ano_ini_bdd, "_", ano_fin_bdd, "_", mes_fin, ".csv"))
-        data_vieja_max = data_vieja_max<- data_vieja_max %>% 
-            filter(Year<ano_fin_bdd)
-        data_vieja_min = read.csv(paste0(directorio_temp, "/min/temp_DGA_min_", ano_ini_bdd, "_", ano_fin_bdd, "_", mes_fin, ".csv"))
-        data_vieja_min = data_vieja_min<- data_vieja_min %>% 
-            filter(Year<ano_fin_bdd)
+        archivo_nuevo = paste0(directorio_archivo, "/q_mean_DGA_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv")
+        write.csv(q_actualizada, file = archivo_nuevo, row.names = FALSE)
 
-        data_nueva_mean<- data_nueva %>% select(Year, Month, Day, Codigo_nacional, temp_mean)
-        data_nueva_max<- data_nueva %>% select(Year, Month, Day, Codigo_nacional, temp_max)
-        data_nueva_min<- data_nueva %>% select(Year, Month, Day, Codigo_nacional, temp_min)
-
-        temp_mean_actualizada = rbind(data_vieja_mean, data_nueva_mean %>% select(Year, Month, Day, Codigo_nacional, temp_mean))
-        temp_max_actualizada = rbind(data_vieja_max, data_nueva_max %>% select(Year, Month, Day, Codigo_nacional, temp_max))
-        temp_min_actualizada = rbind(data_vieja_min, data_nueva_min %>% select(Year, Month, Day, Codigo_nacional, temp_min))
-
-        write.csv(temp_mean_actualizada, file = paste0(directorio_temp, "/mean/temp_DGA_mean_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
-        write.csv(temp_max_actualizada, file = paste0(directorio_temp, "/max/temp_DGA_max_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
-        write.csv(temp_min_actualizada, file = paste0(directorio_temp, "/min/temp_DGA_min_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
-    }
-    else if(variable == "pp" & tolower(fuente) == "dmc"){
+        if(file.exists(archivo_nuevo)){
+            print(paste0("La base de datos de ", variable, " ", fuente, " ha sido actualizada correctamente."))
+            file.remove(archivo_antiguo)
+        }
+        else{
+            print(paste0("El archivo nuevo de ", variable, " ", fuente, " no se ha creado correctamente."))
+        }
         
-        data_vieja = read.csv(paste0(directorio_archivo, "/pp_DMC_", ano_ini_bdd, "_", ano_fin_bdd, "_", mes_fin, ".csv"), sep = ";", dec = ",")
-        data_vieja$pp_day <- as.numeric(data_vieja$pp_day)
-        #head(data_vieja)
+    }
+    else if(variable == "temp" && tolower(fuente) == "dga"){
+        archivo_antiguo = paste0(directorio_archivo, "/temp_DGA_", ano_ini_bdd, "_", ano_fin_bdd, "_", mes_fin, ".csv")
+        data_vieja = read.csv(archivo_antiguo)
+        data_vieja = data_vieja<- data_vieja %>% 
+            filter(Year<ano_fin_bdd)
+        #eliminar temp_mean de la data nueva, no la necesitamos
+        data_nueva <- data_nueva %>% select(-temp_mean)
+        temp_actualizada = rbind(data_vieja, data_nueva)
+        archivo_nuevo <- paste0(directorio_archivo, "/temp_DGA_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv")
+        # Guardar los datos actualizados en un nuevo archivo
+        write.csv(temp_actualizada, file = archivo_nuevo, row.names = FALSE)
+        # Verificar que el archivo nuevo existe
+        if (file.exists(archivo_nuevo)) {
+            print(paste0("La base de datos de ", variable, " ", fuente, " ha sido actualizada correctamente."))
+            file.remove(archivo_antiguo)
+        } 
+        else {
+            print(paste0("El archivo nuevo de ", variable, " ", fuente, " no se ha creado correctamente."))
+        }
 
-        data_nueva$pp_day <- as.numeric(data_nueva$pp_day)
+    
+    }
+    else if(variable == "pp" && tolower(fuente) == "dmc"){
+        archivo_antiguo = paste0(directorio_archivo, "/pp_DMC_", ano_ini_bdd, "_", ano_fin_bdd, "_", mes_fin, ".csv")
+        data_vieja = read.csv(archivo_antiguo)
         data_vieja = data_vieja<- data_vieja %>% 
             filter(Year<ano_fin_bdd)
         pp_actualizada = rbind(data_vieja, data_nueva)
-        write.csv(pp_actualizada, file = paste0(directorio_archivo, "/pp_DMC_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
+        archivo_nuevo = paste0(directorio_archivo, "/pp_DMC_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv")
+        write.csv(pp_actualizada, file = archivo_nuevo, row.names = FALSE)
+
+        if(file.exists(archivo_nuevo)){
+            print(paste0("La base de datos de ", variable, " ", fuente, " ha sido actualizada correctamente."))
+            file.remove(archivo_antiguo)
+        }
+        else{
+            print(paste0("El archivo nuevo de ", variable, " ", fuente, " no se ha creado correctamente."))
+        }
     }
-    else if(variable == "temp_max" & tolower(fuente) == "dmc"){
+    else if(variable == "temp_max" && tolower(fuente) == "dmc"){
         data_vieja = read.csv(paste0(directorio_archivo, "/temp_max_DMC_", ano_ini_bdd, "_", ano_fin_bdd, "_", mes_fin, ".csv"))
         data_vieja = data_vieja<- data_vieja %>% 
             filter(Year<ano_fin_bdd)
         temp_max_actualizada = rbind(data_vieja, data_nueva)
         write.csv(temp_max_actualizada, file = paste0(directorio_archivo, "/temp_max_DMC_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
     }
-    else if(variable == "temp_min" & tolower(fuente) == "dmc"){
+    else if(variable == "temp_min" && tolower(fuente) == "dmc"){
         data_vieja = read.csv(paste0(directorio_archivo, "/temp_min_DMC_", ano_ini_bdd, "_", ano_fin_bdd, "_", mes_fin, ".csv"))
         data_vieja = data_vieja<- data_vieja %>% 
             filter(Year<ano_fin_bdd)
         temp_min_actualizada = rbind(data_vieja, data_nueva)
         write.csv(temp_min_actualizada, file = paste0(directorio_archivo, "/temp_min_DMC_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
     }
-    else if(variable == "niveles_pozos" & tolower(fuente) == "dga"){
-        data_vieja = read.csv(paste0(directorio_archivo, "/niveles_pozos_DGA_", ano_ini_bdd, "_", ano_fin_bdd, "_", mes_fin, ".csv"))
-        data_vieja = data_vieja<- data_vieja %>% 
-            filter(Year<ano_fin_bdd)
-        niveles_pozos_actualizada = rbind(data_vieja, data_nueva)
-        write.csv(niveles_pozos_actualizada, file = paste0(directorio_archivo, "/niveles_pozos_DGA_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
-    }
+    #else if(variable == "niveles_pozos" && tolower(fuente) == "dga"){
+    #    data_vieja = read.csv(paste0(directorio_archivo, "/niveles_pozos_DGA_", ano_ini_bdd, "_", ano_fin_bdd, "_", mes_fin, ".csv"))
+    #    data_vieja = data_vieja<- data_vieja %>% 
+    #        filter(Year<ano_fin_bdd)
+    #    niveles_pozos_actualizada = rbind(data_vieja, data_nueva)
+    #    write.csv(niveles_pozos_actualizada, file = paste0(directorio_archivo, "/niveles_pozos_DGA_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
+    #}
     else{
         stop("No se ha encontrado la combinación de variable y fuente")
     }
+    return(TRUE)
 }

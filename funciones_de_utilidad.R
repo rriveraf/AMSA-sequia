@@ -47,7 +47,7 @@ estacion_mas_cercana <- function(codigo_estacion, metadata, tolerancia_km) {
   if (any(distance <= tolerancia_km)) {
     nearest_station_index <- which.min(distance)
     if (distance[nearest_station_index] <= tolerancia_km) {
-      return(metadata$Codigo_nacional[nearest_station_index])
+      return(as.character(metadata$Codigo_nacional[nearest_station_index]))
     }
   }
   return(NA)  # Retorna NA si no hay ninguna estación dentro de la tolerancia

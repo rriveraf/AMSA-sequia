@@ -1,7 +1,7 @@
 bibliotecas <- c("tidyverse", "readxl", "writexl", "lmomco", "SPEI", "rvest", 
                  "dplyr", "stringr", "lubridate", "tidyr", "purrr", "beepr", 
                  "rjson", "RCurl", "XML", "RJSONIO", "httr", "ggplot2", "readr",
-                  "zoo", "patchwork", "forcats") 
+                  "zoo", "patchwork", "forcats", "shiny") 
 
 # Verificar e instalar las bibliotecas si no están instaladas
 for (libreria in bibliotecas) {

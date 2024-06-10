@@ -4,7 +4,7 @@ actualizar_indicador<- function(directorio_base, fuente, indicador){
   source(paste0(directorio_base, "/Calcular_indicadores.R"))
 
   valid_indicador <- c("ipe", "ipee", "ice")
-  if (!(indicador %in% valid_indicador)) {
+  if (!(tolower(indicador) %in% valid_indicador)) {
     stop("Argumento 'indicador' debe ser 'ipe', 'ipee' o 'ice'")
   }
   
@@ -20,6 +20,7 @@ actualizar_indicador<- function(directorio_base, fuente, indicador){
   directorio_indicador <- obtener_directorio_indicadores(directorio_base, fuente, indicador)
   archivo_mas_grande <- buscar_archivo_mas_grande(directorio_indicador)
 
+  ######INICIO DE PROCESO DE ACTUALIZACIÓN DE INDICADORES######
   #verificar estado de los archivos de indicadores
   #si no hay archivos de indicadores, verificar si hay datos para calcularlos y calcular
   #si archivos de indicadores están incompletos, verificar si hay datos para completarlos y completar
@@ -49,7 +50,40 @@ actualizar_indicador<- function(directorio_base, fuente, indicador){
           calcular_indicador(directorio_base, fuente, indicador, ano_actual, mes_ultimo)
       }
       else{
-          print(paste0("La base de datos necesaria para completar el indicador ", indicador," ", fuente, " está desactualizada", ". Porfavor actualice los datos necesarios.")) 
+          #print(paste0("La base de datos necesaria para completar el indicador ", indicador," ", fuente, " está desactualizada", ". Porfavor actualice los datos necesarios.")) 
+          stop(paste0("La base de datos necesaria para completar el indicador ", indicador," ", fuente, " está desactualizada", ". Porfavor actualice los datos necesarios.") )
       }
+  }
+
+  ########INICIO CONSOLIDAR INDICADORES (unificar fuentes DGA Y DMC), solo para IPE e IPEE ########
+  if(tolower(indicador) != "ice"){
+    
+    if(tolower(fuente) == "dga"){
+      directorio_consolidado <- gsub("DGA", "consolidado", directorio_indicador)
+    }
+    else if (tolower(fuente) == "dmc"){
+      directorio_consolidado <- gsub("DMC", "consolidado", directorio_indicador)
+    }
+    archivo_consolidado <- buscar_archivo_mas_grande(directorio_consolidado)
+    if(length(archivo_consolidado) != 0 && length(obtener_fechas_archivo(archivo_consolidado)) != 0) {
+      list_fechas <- obtener_fechas_archivo(archivo_consolidado)
+      ano_fin <- list_fechas$ano_fin
+      mes_fin <- list_fechas$mes_fin
+
+      if(ano_fin == ano_actual && mes_fin == mes_ultimo){
+          print(paste0("Indicador ", indicador, " consolidado ya está actualizado, no es necesario consolidar las fuentes de datos."))
+      }
+      else{
+          print(paste0("Indicador ", indicador, " consolidado está incompleto, se procederá a actualizar."))
+          consolidar_indicador(directorio_base, directorio_consolidado, indicador, ano_actual, mes_ultimo)
+      }
+    }
+    else{
+        print(paste0("No hay archivos de indicadores consolidados para ", indicador, ". Se procederá a consolidarlos."))
+        consolidar_indicador(directorio_base, directorio_consolidado, indicador, ano_actual, mes_ultimo)
+    }
+  }
+  else{
+    print(paste0("No es necesario consolidar el indicador ", indicador, " ya que solo utiliza la fuente DGA."))
   }
 }

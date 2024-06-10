@@ -96,3 +96,7 @@ obtener_fechas_archivo <- function(ruta_archivo) {
     return(list(ano_ini = ano_ini, ano_fin = ano_fin, mes_fin = mes_fin))
 }  
 
+
+
+#Funciones para graficar los resultados en formato raster
+

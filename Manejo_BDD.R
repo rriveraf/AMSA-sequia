@@ -135,6 +135,10 @@ concatenar_datos_descargados <- function(data_nueva, list_fechas, ano_actual, me
        data_vieja = read.csv(archivo_antiguo)
        data_vieja = data_vieja<- data_vieja %>% 
         filter(Year<ano_fin_bdd)
+       # Verificar si la columna 'X' existe y luego eliminarla si es necesario
+       if ("X" %in% names(data_vieja)) {
+         data_vieja <- data_vieja %>% select(-X)
+       }
        pp_actualizada = rbind(data_vieja, data_nueva)
        archivo_nuevo = paste0(directorio_archivo, "/pp_DGA_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv")
        write.csv(pp_actualizada, file = archivo_nuevo, row.names = FALSE)
@@ -151,6 +155,9 @@ concatenar_datos_descargados <- function(data_nueva, list_fechas, ano_actual, me
         data_vieja = read.csv(archivo_antiguo)
         data_vieja = data_vieja <- data_vieja %>% 
           filter(Year<ano_fin_bdd)
+        if ("X" %in% names(data_vieja)) {
+            data_vieja <- data_vieja %>% select(-X)
+        }
         q_actualizada = rbind(data_vieja, data_nueva)
 
         archivo_nuevo = paste0(directorio_archivo, "/q_mean_DGA_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv")
@@ -169,6 +176,9 @@ concatenar_datos_descargados <- function(data_nueva, list_fechas, ano_actual, me
         data_vieja = read.csv(archivo_antiguo)
         data_vieja = data_vieja<- data_vieja %>% 
             filter(Year<ano_fin_bdd)
+        if ("X" %in% names(data_vieja)) {
+         data_vieja <- data_vieja %>% select(-X)
+        }
         #eliminar temp_mean de la data nueva, no la necesitamos
         data_nueva <- data_nueva %>% select(-temp_mean)
         temp_actualizada = rbind(data_vieja, data_nueva)
@@ -189,6 +199,9 @@ concatenar_datos_descargados <- function(data_nueva, list_fechas, ano_actual, me
         data_vieja = read.csv(archivo_antiguo)
         data_vieja = data_vieja<- data_vieja %>% 
             filter(Year<ano_fin_bdd)
+        if ("X" %in% names(data_vieja)) {
+            data_vieja <- data_vieja %>% select(-X)
+        }
         pp_actualizada = rbind(data_vieja, data_nueva)
         archivo_nuevo = paste0(directorio_archivo, "/pp_DMC_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv")
         write.csv(pp_actualizada, file = archivo_nuevo, row.names = FALSE)
@@ -206,6 +219,9 @@ concatenar_datos_descargados <- function(data_nueva, list_fechas, ano_actual, me
         data_vieja = read.csv(archivo_antiguo)
         data_vieja = data_vieja<- data_vieja %>% 
             filter(Year<ano_fin_bdd)
+        if ("X" %in% names(data_vieja)) {
+         data_vieja <- data_vieja %>% select(-X)
+        }
         temp_actualizada = rbind(data_vieja, data_nueva)
         archivo_nuevo = paste0(directorio_archivo, "/temp_DMC_", ano_ini_bdd, "_", ano_actual, "_", mes_ultimo, ".csv")
         write.csv(temp_actualizada, file = archivo_nuevo, row.names = FALSE)
@@ -253,7 +269,7 @@ depurar_variable <- function(directorio_base, directorio_depurado, variable, fue
     else if(variable == "pp" && tolower(fuente) == "dmc")
     {
         ruta_archivo_descargado = paste0(directorio_descargas, "/pp_DMC_", 2020, "_", ano_actual, "_", mes_ultimo, ".csv")
-        ruta_archivo_metadata = paste0(directorio_base, "/BBDD/metadatos/DMC/estaciones_DMC.xlsx")
+        ruta_archivo_metadata = paste0(directorio_base, "/BBDD/metadatos/DMC/estaciones_DMC.csv")
         resultado = procesar_pp_DGA_DMC(directorio_base, ruta_archivo_descargado, ruta_archivo_metadata, fuente = "DMC")
         if(resultado == FALSE){
             stop("Error al procesar los datos de precipitación")
@@ -271,7 +287,7 @@ depurar_variable <- function(directorio_base, directorio_depurado, variable, fue
     else if(variable == "temp" && tolower(fuente) == "dmc")
     {
         ruta_archivo_descargado = paste0(directorio_descargas, "/temp_DMC_", 2020, "_", ano_actual, "_", mes_ultimo, ".csv")
-        ruta_archivo_metadata = paste0(directorio_base, "/BBDD/metadatos/DMC/estaciones_DMC.xlsx")
+        ruta_archivo_metadata = paste0(directorio_base, "/BBDD/metadatos/DMC/estaciones_DMC.csv")
         resultado = procesar_temp_DMC_DMC(directorio_base, ruta_archivo_descargado, ruta_archivo_metadata, fuente = "DMC")
         if(resultado == FALSE){
             stop("Error al procesar los datos de temperatura")
@@ -325,7 +341,7 @@ concatenar_variable <- function(directorio_base, directorio_concatenado, variabl
     else if(variable == "caudal" && tolower(fuente) == "dga"){
         ruta_archivo_caudal_depurado = paste0(directorio_base, "/BBDD/q/DGA/depurado/q_mean_DGA_2020_", ano_actual, "_", mes_ultimo, ".csv")
         ruta_archivo_metadatos = paste0(directorio_base, "/BBDD/metadatos/DGA/caudal/estaciones_DGA_caudal.csv")
-        resultado = concatenar_caudal_DGA(directorio_base, ruta_archivo_caudal_depurado, ruta_archivo_metadatos, ano_actual, mes_ultimo)
+        resultado = concatenar_caudal_DGA(directorio_base, ruta_archivo_caudal_depurado, ano_actual, mes_ultimo)
         if(resultado == FALSE){
             stop("Error al concatenar los datos de caudal")
         }
@@ -360,54 +376,90 @@ obtener_directorio_indicadores <- function(directorio_base, fuente, indicador){
 }
 
 verificar_datos_para_indicadores <- function(directorio_base, indicador, fuente, ano_actual, mes_ultimo){
-    if(tolower(indicador) == "ice" && tolower(fuente) == "dga"){
-        archivo_caudal = paste0(directorio_base, "/BBDD/q/DGA/concatenado/q_DGA_mensual_1989_", ano_actual, "_", mes_ultimo, ".csv")
-        if(file.exists(archivo_caudal)){
+  indicador <- toupper(indicador)
+  fuente <- toupper(fuente)
+  
+  base_path <- paste0(directorio_base, "/BBDD/")
+  
+  if (indicador == "ICE" && fuente == "DGA") {
+    archivo_caudal <- paste0(base_path, "q/DGA/concatenado/q_DGA_mensual_1989_", ano_actual, "_", mes_ultimo, ".csv")
+    return(file.exists(archivo_caudal))
+  }
+  
+  if (indicador == "IPE") {
+    archivo_pp <- paste0(base_path, "pp/", fuente, "/concatenado/pp_", fuente, "_mensual_1979_", ano_actual, "_", mes_ultimo, ".csv")
+    return(file.exists(archivo_pp))
+  }
+  
+  if (indicador == "IPEE") {
+    archivo_pp <- paste0(base_path, "pp/", fuente, "/concatenado/pp_", fuente, "_mensual_1979_", ano_actual, "_", mes_ultimo, ".csv")
+    archivo_temp <- paste0(base_path, "temp/", fuente, "/concatenado/temp_", fuente, "_mensual_1979_", ano_actual, "_", mes_ultimo, ".csv")
+    return(file.exists(archivo_pp) && file.exists(archivo_temp))
+  }
+  
+  return(FALSE)
+}
+
+
+consolidar_indicador <- function(directorio_base, directorio_consolidado, indicador, ano_actual, mes_ultimo){
+    
+    indicador <- toupper(indicador)  # Asegura que el indicador esté en mayúsculas si es necesario
+    
+    if(indicador == "IPE" || indicador == "IPEE"){
+        file_path_dga <- paste0(directorio_base, "/BBDD/indicadores/", indicador, "/DGA/", indicador, "_DGA_1979_", ano_actual, "_", mes_ultimo, ".csv")
+        file_path_dmc <- paste0(directorio_base, "/BBDD/indicadores/", indicador, "/DMC/", indicador, "_DMC_1979_", ano_actual, "_", mes_ultimo, ".csv")
+
+        tryCatch({
+            data_dga <- read.csv(file_path_dga)
+            data_dmc <- read.csv(file_path_dmc)
+            data_dmc$Codigo_nacional = as.character(data_dmc$Codigo_nacional)
+
+            data_consolidado <- rbind(data_dga, data_dmc)
+            write.csv(data_consolidado, paste0(directorio_consolidado, "/", indicador, "_consolidado_1979_", ano_actual, "_", mes_ultimo, ".csv"), row.names = FALSE)
+            eliminar_archivos_antiguos(directorio_consolidado, ano_actual, mes_ultimo)
+            print(paste0("Indicador ", indicador, " consolidado con éxito"))
             return(TRUE)
-        }
-        else{
+        }, error = function(e){
+            message("Actualice todos los indicadores para poder consolidarlos")
             return(FALSE)
-        }
-    }
-    if(tolower(indicador) == "ipe" && tolower(fuente) == "dga"){
-        archivo_pp = paste0(directorio_base, "/BBDD/pp/DGA/concatenado/pp_DGA_mensual_1979_", ano_actual, "_", mes_ultimo, ".csv")
-        if(file.exists(archivo_pp)){
-            return(TRUE)
-        }
-        else{
-            return(FALSE)
-        }
-    }
-    if(tolower(indicador) == "ipe" && tolower(fuente) == "dmc"){
-        archivo_pp = paste0(directorio_base, "/BBDD/pp/DMC/concatenado/pp_DMC_mensual_1979_", ano_actual, "_", mes_ultimo, ".csv")
-        if(file.exists(archivo_pp)){
-            return(TRUE)
-        }
-        else{
-            return(FALSE)
-        }
-    }
-    if(tolower(indicador) == "ipee" && tolower(fuente) == "dga"){
-        archivo_pp = paste0(directorio_base, "/BBDD/pp/DGA/concatenado/pp_DGA_mensual_1979_", ano_actual, "_", mes_ultimo, ".csv")
-        archivo_temp = paste0(directorio_base, "/BBDD/temp/DGA/concatenado/temp_DGA_mensual_1979_", ano_actual, "_", mes_ultimo, ".csv")
-        if(file.exists(archivo_pp) && file.exists(archivo_temp)){
-            return(TRUE)
-        }
-        else{
-            return(FALSE)
-        }
-    }
-    if(tolower(indicador) == "ipee" && tolower(fuente) == "dmc"){
-        archivo_pp = paste0(directorio_base, "/BBDD/pp/DMC/concatenado/pp_DMC_mensual_1979_", ano_actual, "_", mes_ultimo, ".csv")
-        archivo_temp = paste0(directorio_base, "/BBDD/temp/DMC/concatenado/temp_DMC_mensual_1979_", ano_actual, "_", mes_ultimo, ".csv")
-        if(file.exists(archivo_pp) && file.exists(archivo_temp)){
-            return(TRUE)
-        }
-        else{
-            return(FALSE)
-        }
-    }
-    else{
+        })
+    } else {
         return(FALSE)
     }
+}
+
+verificar_si_indicadores_consolidados <- function(directorio_base, ano_actual, mes_ultimo){
+  valid_indicador <- c("IPE", "IPEE", "ICE")
+  
+  for(indicador in valid_indicador) {
+    if(indicador == "ICE"){
+      archivo_consolidado <- paste0(directorio_base, "/BBDD/indicadores/ICE/DGA/ICE_DGA_1989_", ano_actual, "_", mes_ultimo, ".csv")
+    } else {
+      archivo_consolidado <- paste0(directorio_base,"/BBDD/indicadores/", indicador, "/consolidado/", indicador, "_consolidado_1979_", ano_actual, "_", mes_ultimo, ".csv")
+    }
+    
+    # Verificar si el archivo existe
+    if(!file.exists(archivo_consolidado)){
+      return(FALSE)
+    }
+  }
+  
+  return(TRUE)
+}
+
+borrar_directorios_mapas_indicadores <- function(directorio_base){
+  #esta función se ejecuta si es que se van a actualizar los mapas shapefiles de indicadores.
+  print("Borrando directorios de mapas de indicadores, necesario para actualizar los mapas")
+  directorios <- c("ICE", "SPEI", "SPI")
+  
+  for(directorio in directorios) {
+    ruta_completa <- file.path(directorio_base, "BBDD", "mapas", directorio)
+    
+    if (dir.exists(ruta_completa)) {
+      unlink(ruta_completa, recursive = TRUE)
+      cat("Directorio borrado:", ruta_completa, "\n")
+    } else {
+      cat("Directorio no encontrado:", ruta_completa, "\n")
+    }
+  }
 }

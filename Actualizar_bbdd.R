@@ -28,39 +28,33 @@ actualizar_datos <- function(directorio_base, variable, fuente) {
   mes_ultimo <- as.numeric(substr(Sys.time() %m-% months(1), 6, 7))
   ano_actual <- as.numeric(substr(Sys.time() %m-% months(1), 1, 4))
   
+ # Definir columnas de los archivos de metadatos, con su tipo de dato específico
+  #tipos <- cols(
+  #  Codigo_nacional = col_character(),
+  #  Nombre = col_character(),
+  #  LAT = col_double(),
+  #  LONG = col_double(),
+  #  Altura = col_integer(),
+  #  COD_CUEN = col_integer(),
+  #  COD_SUBC = col_integer(),
+  #  COD_SSUBC = col_integer(),
+  #  NOM_CUEN = col_character(),
+  #  NOM_SUBC = col_character(),
+  #  NOM_SSUBC = col_character(),
+  #  COD_REG = col_integer(),
+  #  COD_PROV = col_integer(),
+  #  COD_COM = col_integer(),
+  #  NOM_REG = col_character(),
+  #  NOM_PROV = col_character(),
+  #  NOM_COM = col_character()
+  #)
+  
   # Definir estaciones a descargar
-  metadatos_DMC_path = paste0(directorio_base, "/BBDD/metadatos/DMC/estaciones_DMC.xlsx")
-  csv_metadata_pozos_path = paste0(directorio_base, "/BBDD/metadatos/DGA/pozos/estaciones_DGA_pozos.csv")
-  csv_metadata_caudal_path = paste0(directorio_base, "/BBDD/metadatos/DGA/caudal/estaciones_DGA_caudal.csv")
-  csv_metadata_pp_y_temp_path = paste0(directorio_base, "/BBDD/metadatos/DGA/pp_y_temp/estaciones_DGA_pp_y_temp.csv")
+  metadatos_DMC = read.csv(paste0(directorio_base, "/BBDD/metadatos/DMC/estaciones_DMC.csv"))
+  metadata_DGA_caudal = read.csv(paste0(directorio_base, "/BBDD/metadatos/DGA/caudal/estaciones_DGA_caudal.csv"))
+  metadata_DGA_pp_y_temp = read.csv(paste0(directorio_base, "/BBDD/metadatos/DGA/pp_y_temp/estaciones_DGA_pp_y_temp.csv"))
   
-  # Definir columnas de los archivos de metadatos, con su tipo de dato específico
-  tipos <- cols(
-    Codigo_nacional = col_character(),
-    Nombre = col_character(),
-    LAT = col_double(),
-    LONG = col_double(),
-    Altura = col_integer(),
-    COD_CUEN = col_integer(),
-    COD_SUBC = col_integer(),
-    COD_SSUBC = col_integer(),
-    NOM_CUEN = col_character(),
-    NOM_SUBC = col_character(),
-    NOM_SSUBC = col_character(),
-    COD_REG = col_integer(),
-    COD_PROV = col_integer(),
-    COD_COM = col_integer(),
-    NOM_REG = col_character(),
-    NOM_PROV = col_character(),
-    NOM_COM = col_character()
-  )
-  
-  #DESCARGA DE DATOS
-  #metadata_DGA_pozos <- read_csv(csv_metadata_pozos_path, col_types = tipos)
-  metadata_DGA_caudal <- read_csv(csv_metadata_caudal_path, col_types = tipos)
-  metadata_DGA_pp_y_temp <- read_csv(csv_metadata_pp_y_temp_path, col_types = tipos)
-  metadatos_DMC <- read_excel(metadatos_DMC_path)
-  
+ 
   directorio_archivo = obtener_directorio_descargas(variable, fuente)
   archivo_mas_grande = buscar_archivo_mas_grande(directorio_archivo)
   

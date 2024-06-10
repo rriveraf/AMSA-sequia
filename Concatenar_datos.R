@@ -2,14 +2,13 @@
 # 1. Concatenar los datos históricos (1979 - 2019) con los datos actuales (2019-hoy) de caudal, precipitación y temperatura
 # 2. Guardar/retornar los datos concatenados en un archivo CSV
 
-concatenar_caudal_DGA <- function(directorio_base, ruta_archivo_caudal_depurado, ruta_archivo_metadatos, ano_actual, mes_ultimo){
+concatenar_caudal_DGA <- function(directorio_base, ruta_archivo_caudal_depurado, ano_actual, mes_ultimo){
   print(paste0("Concatenando datos de caudal DGA desde 1989 hasta ", ano_actual, " mes ", mes_ultimo))
   # Cargar datos históricos fijos y datos actuales
   archivo_historico <- "/BBDD/q/DGA/periodo_historico/q_DGA_monthly_1989_2019.csv"
   tryCatch({
     caudal_mensual_1989_2019 <- read.csv(paste0(directorio_base, archivo_historico))
     caudal_day_2020_actual <- read.csv(ruta_archivo_caudal_depurado)
-    metadatos_temp <- read.csv(ruta_archivo_metadatos)  # Si es necesario
   }, error = function(e) {
     stop("Error al cargar los datos históricos o actuales")
   })
@@ -24,7 +23,10 @@ concatenar_caudal_DGA <- function(directorio_base, ruta_archivo_caudal_depurado,
   estaciones_historicas <- unique(caudal_mensual_1989_2019$Codigo_nacional)
   caudal_mensual_2020_actual <- caudal_mensual_2020_actual[caudal_mensual_2020_actual$Codigo_nacional %in% estaciones_historicas, ]
 
-  caudal_mensual_1989_2019 <- caudal_mensual_1989_2019 %>% select(-X)
+  # Verificar si la columna 'X' existe y luego eliminarla si es necesario
+  if ("X" %in% names(caudal_mensual_1989_2019)) {
+    caudal_mensual_1989_2019 <- caudal_mensual_1989_2019 %>% select(-X)
+  }
   # Combinar datos históricos y actuales
   caudal_mensual_completo <- rbind(caudal_mensual_1989_2019, caudal_mensual_2020_actual)
 

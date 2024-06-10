@@ -519,7 +519,7 @@ descargar_pp_DMC<-function(ano_inicio, ano_actual, mes_ultimo, estaciones){
                                  Codigo_nacional=substring(url, 73, 78))) }
 
     }, error = function(e) {
-      message("Error de conexión: ", conditionMessage(e))
+      #message("Error de conexión: ", conditionMessage(e))
       # En caso de que la conexión tire ERROR:
       return(data.frame(Day=NA,
                         Month=NA,

@@ -26,7 +26,7 @@ calcular_ICE_DGA <- function(directorio_base, ruta_archivo_caudal_concatenado) {
       ungroup() %>%
       select(-Date)
 
-    # Calcular ICE
+    # Calcular ICE, fijamos mínimo valor -5 y máximo valor 5
     ice_dataframe <- caudal_mensual_completo %>%
       group_by(Codigo_nacional) %>%
       mutate(
@@ -36,7 +36,9 @@ calcular_ICE_DGA <- function(directorio_base, ruta_archivo_caudal_concatenado) {
         ice_12 = spi(q_12month, scale = 1, distribution = "Gamma", na.rm = TRUE, verbose = FALSE)$fitted,
         ice_24 = spi(q_24month, scale = 1, distribution = "Gamma", na.rm = TRUE, verbose = FALSE)$fitted
       ) %>%
-      ungroup()
+      ungroup() %>%
+      mutate(across(starts_with("ice"), ~pmax(pmin(., 5), -5)))
+    
 
       fechas_archivo = obtener_fechas_archivo(ruta_archivo_caudal_concatenado)
       # Guardar el dataframe de ICE
@@ -68,7 +70,7 @@ calcular_IPE_DGA_DMC <- function(directorio_base, ruta_archivo_pp_concatenado, f
     pp_mensual_completo <- pp_mensual_completo %>%
       arrange(Codigo_nacional, Year, Month)
 
-    # Calcular SPI para varios períodos
+    # Calcular SPI para varios períodos, fijando minimo valor en -5 y maximo valor en 5
     spi_dataframe <- pp_mensual_completo %>%
       group_by(Codigo_nacional) %>%
       mutate(
@@ -78,7 +80,8 @@ calcular_IPE_DGA_DMC <- function(directorio_base, ruta_archivo_pp_concatenado, f
         spi_12 = spi(pp_month, scale = 12, distribution = "Gamma", na.rm = TRUE, verbose = FALSE)$fitted,
         spi_24 = spi(pp_month, scale = 24, distribution = "Gamma", na.rm = TRUE, verbose = FALSE)$fitted
       ) %>%
-      ungroup()
+      ungroup() %>% 
+      mutate(across(starts_with("spi"), ~pmax(pmin(., 5), -5)))
 
     fechas_archivo = obtener_fechas_archivo(ruta_archivo_pp_concatenado)
   
@@ -120,12 +123,10 @@ calcular_IPEE_DGA_DMC <- function(directorio_base, ruta_archivo_pp_concatenado, 
     # Para eso necesitamos la latitud de cada estación
     if(tolower(fuente) == "dga") {
       metadata_path = paste0(directorio_base, "/BBDD/metadatos/DGA/pp_y_temp/estaciones_DGA_pp_y_temp.csv")
-      metadata <- read.csv(metadata_path)
     } else if (tolower(fuente) == "dmc") {
-      metadata_path = paste0(directorio_base, "/BBDD/metadatos/DMC/estaciones_DMC.xlsx")
-      metadata = read_excel(metadata_path)
+      metadata_path = paste0(directorio_base, "/BBDD/metadatos/DMC/estaciones_DMC.csv")
     }
-    
+    metadata = read.csv(metadata_path)
     #encontrar la latitud de cada estación
     pp_temp_mensual_completo$lat <- metadata$LAT[match(pp_temp_mensual_completo$Codigo_nacional, metadata$Codigo_nacional)]
     #Calcular ETP y BH
@@ -146,7 +147,8 @@ calcular_IPEE_DGA_DMC <- function(directorio_base, ruta_archivo_pp_concatenado, 
         spei_12 = spei(BH, scale = 12, distribution = "log-Logistic", na.rm = TRUE, verbose = FALSE)$fitted,
         spei_24 = spei(BH, scale = 24, distribution = "log-Logistic", na.rm = TRUE, verbose = FALSE)$fitted
       ) %>%
-      ungroup()
+      ungroup() %>%
+      mutate(across(starts_with("spei"), ~pmax(pmin(., 5), -5)))
 
     fechas_archivo = obtener_fechas_archivo(ruta_archivo_pp_concatenado)
     # Guardar el resultado en el directorio correspondiente

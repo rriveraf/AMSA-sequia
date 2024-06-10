@@ -69,11 +69,7 @@ procesar_pp_DGA_DMC <- function(directorio_base, ruta_archivo_datos, ruta_archiv
   # Intentar cargar los datos y manejar errores potenciale
   tryCatch({
      pp_DGA_DMC <- read.csv(ruta_archivo_datos)
-     if(tolower(fuente) == "dga") {
-       metadatos_pp <- read.csv(ruta_archivo_metadatos)
-     } else if(tolower(fuente) == "dmc") {
-      metadatos_pp <- read_excel(ruta_archivo_metadatos)
-     }
+     metadatos_pp <- read.csv(ruta_archivo_metadatos)
    }, error = function(e) {
      cat("Error al cargar los archivos: ", e$message, "\n")
      return(NULL)
@@ -92,6 +88,8 @@ procesar_pp_DGA_DMC <- function(directorio_base, ruta_archivo_datos, ruta_archiv
   n_minimo_datos = ((fechas_archivo$ano_fin - fechas_archivo$ano_ini) * 365 + fechas_archivo$mes_fin * 30) * completitud
   estaciones_validas <- count_estaciones %>% filter(n >= n_minimo_datos)
   pp_DGA_DMC_validas <- pp_DGA_DMC %>% filter(Codigo_nacional %in% estaciones_validas$Codigo_nacional)
+
+
 
   # Relleno de fechas y datos faltantes
   pp_DGA_DMC_relleno <- rellenar_fechas(pp_DGA_DMC_validas) %>%
@@ -153,14 +151,11 @@ procesar_pp_DGA_DMC <- function(directorio_base, ruta_archivo_datos, ruta_archiv
 }
 procesar_temp_DGA_DMC <- function(directorio_base, ruta_archivo_datos, ruta_archivo_metadatos, completitud = 0.7, tolerancia_km = 50, fuente) {
   print(paste0("Inicio de depuración y rellenado de datos de temperatura para fuente ", fuente))
+  print(paste0("Tiempo de espera estimado para esta etapa: 10 minutos"))
   # try catch Cargar datos
   tryCatch({
       temp_DGA_DMC <- read.csv(ruta_archivo_datos)
-      if(tolower(fuente) == "dga") {
-          metadatos_temp <- read.csv(ruta_archivo_metadatos)
-      } else if(tolower(fuente) == "dmc") {
-        metadatos_temp <- read_excel(ruta_archivo_metadatos)
-      }
+      metadatos_temp <- read.csv(ruta_archivo_metadatos)
   }, error = function(e) {
       cat("Error al cargar los archivos: ", e$message, "\n")
       return(NULL)
@@ -176,17 +171,20 @@ procesar_temp_DGA_DMC <- function(directorio_base, ruta_archivo_datos, ruta_arch
 
   # Conteo de mediciones por estación
   count_estaciones <- temp_DGA_DMC %>% group_by(Codigo_nacional) %>% summarise(n = n())
-
+  
   # Fechas y filtrado por completitud
   fechas_archivo <- obtener_fechas_archivo(ruta_archivo_datos)
   n_minimo_datos = ((fechas_archivo$ano_fin - fechas_archivo$ano_ini) * 365 + fechas_archivo$mes_fin*30) * completitud
   estaciones_validas <- count_estaciones %>% filter(n >= n_minimo_datos)
   temp_DGA_DMC_validas <- temp_DGA_DMC %>% filter(Codigo_nacional %in% estaciones_validas$Codigo_nacional)
-
+  
+  print("llegue hasta aqui")
   # Relleno de fechas faltantes
   temp_DGA_DMC_relleno <- rellenar_fechas(temp_DGA_DMC_validas)
   temp_DGA_DMC_relleno <- temp_DGA_DMC_relleno %>%
     select(Year, Month, Day, Codigo_nacional, temp_min, temp_max)
+  
+  #print("llegue hasta aqui")
 
   # PASO 1: Imputación de vecinos cercanos
   tuplas_estaciones <- data.frame(Codigo_nacional = unique(temp_DGA_DMC_relleno$Codigo_nacional), mas_cercana = NA)
